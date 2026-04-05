@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Launch Lab — Free Engineering for Everyone</title>
+<meta name="description" content="Launch Lab is a free aerospace and engineering education platform for underserved students. Built by Michael Grimalovsky from a garage in Colonia, NJ.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #020810;
+  --bg-card: #0a1628;
+  --accent: #00b4ff;
+  --accent-glow: rgba(0, 180, 255, 0.3);
+  --text: #c8d6e5;
+  --text-bright: #edf2f7;
+  --text-muted: #5a6a7a;
+  --border: #122040;
+  --green: #00ff88;
+  --font-mono: 'Space Mono', monospace;
+  --font-heading: 'Syne', sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  line-height: 1.7;
+  overflow-x: hidden;
+  position: relative;
+}
+
+canvas#starfield {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.blueprint-grid {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(0, 180, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 180, 255, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+.content-wrapper {
+  position: relative;
+  z-index: 2;
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  background: rgba(2, 8, 16, 0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-logo {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 1.25rem;
+  color: var(--text-bright);
+  letter-spacing: 2px;
+  text-decoration: none;
+}
+
+.nav-logo span {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.nav-links { display: flex; align-items: center; gap: 2rem; list-style: none; }
+
+.nav-links a {
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: color 0.3s;
+}
+.nav-links a:hover { color: var(--accent); }
+
+.nav-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--green);
+}
+
+.nav-status .dot {
+  width: 8px; height: 8px;
+  background: var(--green);
+  border-radius: 50%;
+  animation: blink 2s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 4px;
+}
+.hamburger span {
+  display: block;
+  width: 24px; height: 2px;
+  background: var(--text-bright);
+  transition: 0.3s;
+}
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-block;
+  padding: 14px 32px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--bg);
+  clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+}
+.btn-primary:hover {
+  background: #33c4ff;
+  box-shadow: 0 0 30px var(--accent-glow);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+}
+.btn-secondary:hover {
+  background: rgba(0, 180, 255, 0.1);
+}
+
+/* ── SECTION BASICS ── */
+section {
+  padding: 100px 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-tag {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+
+.section-title {
+  font-family: var(--font-heading);
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--text-bright);
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+/* ── REVEAL ANIMATION ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.4s; }
+.reveal-delay-5 { transition-delay: 0.5s; }
+
+/* ── HERO ── */
+#hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding-top: 64px;
+}
+
+.hero-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+  width: 100%;
+}
+
+.hero-text h1 {
+  font-family: var(--font-heading);
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 800;
+  color: var(--text-bright);
+  line-height: 1.1;
+  margin-bottom: 1.5rem;
+}
+
+.hero-text h1 em {
+  font-style: normal;
+  color: var(--accent);
+}
+
+.hero-text p {
+  font-size: 0.95rem;
+  color: var(--text);
+  max-width: 480px;
+  margin-bottom: 2rem;
+}
+
+.hero-buttons { display: flex; gap: 1rem; flex-wrap: wrap; }
+
+/* ── PLASMA RING ── */
+.plasma-ring-container {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  aspect-ratio: 1;
+  margin: 0 auto;
+}
+
+.plasma-ring {
+  position: absolute;
+  inset: 0;
+}
+
+.ring {
+  cx: 50%; cy: 50%;
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+
+.ring-1 { r: 38%; opacity: 0.6; animation: spin 12s linear infinite; }
+.ring-2 { r: 32%; opacity: 0.4; animation: spin 18s linear infinite reverse; stroke-dasharray: 8 12; }
+.ring-3 { r: 26%; opacity: 0.3; animation: spin 25s linear infinite; stroke-dasharray: 4 20; }
+
+@keyframes spin {
+  to { transform: rotate(360deg); transform-origin: center; }
+}
+
+.ring-1, .ring-2, .ring-3 { transform-origin: center; }
+
+.plasma-core {
+  cx: 50%; cy: 50%; r: 8%;
+  fill: var(--accent);
+  opacity: 0.5;
+  animation: pulse-core 3s ease-in-out infinite;
+}
+
+.plasma-core-inner {
+  cx: 50%; cy: 50%; r: 4%;
+  fill: white;
+  opacity: 0.8;
+  animation: pulse-core 3s ease-in-out infinite 0.5s;
+}
+
+@keyframes pulse-core {
+  0%, 100% { opacity: 0.3; r: 4%; }
+  50% { opacity: 0.8; r: 5%; }
+}
+
+.plasma-glow {
+  cx: 50%; cy: 50%; r: 12%;
+  fill: var(--accent);
+  opacity: 0.08;
+  animation: pulse-glow 4s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.05; }
+  50% { opacity: 0.15; }
+}
+
+.beam-line {
+  stroke: var(--accent);
+  stroke-width: 0.5;
+  opacity: 0;
+  animation: beam-fade 4s ease-in-out infinite;
+}
+.beam-line:nth-child(1) { animation-delay: 0s; }
+.beam-line:nth-child(2) { animation-delay: 0.67s; }
+.beam-line:nth-child(3) { animation-delay: 1.33s; }
+.beam-line:nth-child(4) { animation-delay: 2s; }
+.beam-line:nth-child(5) { animation-delay: 2.67s; }
+.beam-line:nth-child(6) { animation-delay: 3.33s; }
+
+@keyframes beam-fade {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 0.4; }
+}
+
+.orbit-dot {
+  r: 3;
+  fill: var(--accent);
+  filter: drop-shadow(0 0 6px var(--accent));
+}
+
+.orbit-dot-1 { animation: orbit-1 12s linear infinite; }
+.orbit-dot-2 { animation: orbit-2 18s linear infinite reverse; }
+.orbit-dot-3 { animation: orbit-3 25s linear infinite; }
+
+@keyframes orbit-1 {
+  from { transform: rotate(0deg) translateX(38%) rotate(0deg); }
+  to { transform: rotate(360deg) translateX(38%) rotate(-360deg); }
+}
+@keyframes orbit-2 {
+  from { transform: rotate(0deg) translateX(32%) rotate(0deg); }
+  to { transform: rotate(-360deg) translateX(32%) rotate(360deg); }
+}
+@keyframes orbit-3 {
+  from { transform: rotate(0deg) translateX(26%) rotate(0deg); }
+  to { transform: rotate(360deg) translateX(26%) rotate(-360deg); }
+}
+
+.orbit-dot-1, .orbit-dot-2, .orbit-dot-3 { transform-origin: 50% 50%; }
+
+/* ── MISSION / STATS ── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 4rem;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 2rem;
+  text-align: center;
+}
+
+.stat-card .number {
+  font-family: var(--font-heading);
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--accent);
+  display: block;
+}
+
+.stat-card .label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 0.25rem;
+}
+
+.mission-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  align-items: start;
+}
+
+.manifesto {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--text);
+}
+
+.pull-quote {
+  font-family: var(--font-heading);
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text-bright);
+  line-height: 1.3;
+  border-left: 3px solid var(--accent);
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.pull-quote::before {
+  content: '"';
+  font-size: 5rem;
+  color: var(--accent);
+  opacity: 0.2;
+  position: absolute;
+  top: -2rem;
+  left: 1rem;
+  font-family: var(--font-heading);
+}
+
+/* ── PROJECT CARDS ── */
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.project-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 2rem;
+  transition: border-color 0.3s, transform 0.3s;
+  display: flex;
+  flex-direction: column;
+}
+
+.project-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-4px);
+}
+
+.project-num {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  letter-spacing: 2px;
+  margin-bottom: 0.5rem;
+}
+
+.project-card h3 {
+  font-family: var(--font-heading);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-bright);
+  margin-bottom: 0.75rem;
+}
+
+.project-meta {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.badge {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 3px 10px;
+  border-radius: 2px;
+}
+
+.badge-beginner { background: rgba(0, 255, 136, 0.1); color: var(--green); border: 1px solid rgba(0, 255, 136, 0.2); }
+.badge-intermediate { background: rgba(0, 180, 255, 0.1); color: var(--accent); border: 1px solid rgba(0, 180, 255, 0.2); }
+.badge-advanced { background: rgba(255, 100, 50, 0.1); color: #ff6432; border: 1px solid rgba(255, 100, 50, 0.2); }
+
+.badge-cost {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+.project-card p {
+  font-size: 0.85rem;
+  color: var(--text);
+  flex: 1;
+  margin-bottom: 1.5rem;
+}
+
+.project-card .btn {
+  align-self: flex-start;
+  padding: 10px 24px;
+  font-size: 0.75rem;
+}
+
+/* ── TIMELINE ── */
+.timeline {
+  position: relative;
+  padding-left: 3rem;
+  margin-top: 3rem;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--accent), transparent);
+}
+
+.timeline-node {
+  position: relative;
+  margin-bottom: 3rem;
+  padding-left: 1rem;
+}
+
+.timeline-node::before {
+  content: '';
+  position: absolute;
+  left: -3rem;
+  top: 6px;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  background: var(--bg);
+}
+
+.timeline-date {
+  font-size: 0.75rem;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 0.25rem;
+}
+
+.timeline-node h3 {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-bright);
+  margin-bottom: 0.25rem;
+}
+
+.timeline-node p {
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.timeline-node.node-glow::before {
+  background: var(--accent);
+  box-shadow: 0 0 20px var(--accent), 0 0 40px var(--accent-glow);
+  animation: pulse-glow-node 2s ease-in-out infinite;
+}
+
+.timeline-node.node-glow h3 {
+  color: var(--accent);
+}
+
+@keyframes pulse-glow-node {
+  0%, 100% { box-shadow: 0 0 10px var(--accent); }
+  50% { box-shadow: 0 0 25px var(--accent), 0 0 50px var(--accent-glow); }
+}
+
+/* ── RESOURCE LIBRARY ── */
+.resource-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.resource-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.resource-card-header {
+  background: linear-gradient(135deg, rgba(0, 180, 255, 0.15), rgba(0, 180, 255, 0.05));
+  border-bottom: 1px solid var(--border);
+  padding: 1.25rem 1.5rem;
+}
+
+.resource-card-header h3 {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.resource-card ul {
+  list-style: none;
+  padding: 1.5rem;
+}
+
+.resource-card li {
+  font-size: 0.85rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  color: var(--text);
+}
+.resource-card li:last-child { border-bottom: none; }
+
+.resource-card li::before {
+  content: '→ ';
+  color: var(--accent);
+}
+
+.resource-card ol {
+  list-style: none;
+  padding: 1.5rem;
+  counter-reset: steps;
+}
+
+.resource-card ol li {
+  counter-increment: steps;
+  font-size: 0.85rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  color: var(--text);
+}
+.resource-card ol li:last-child { border-bottom: none; }
+
+.resource-card ol li::before {
+  content: counter(steps) '. ';
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* ── FORM ── */
+.form-section {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 100px 2rem;
+  position: relative;
+  z-index: 2;
+}
+
+.submit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: 2rem;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-bright);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  transition: border-color 0.3s;
+  outline: none;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  border-color: var(--accent);
+}
+
+.form-group textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.form-note {
+  font-size: 0.85rem;
+  color: var(--text);
+  margin-top: 1rem;
+  text-align: center;
+  font-style: italic;
+}
+
+/* ── FOOTER ── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 3rem 2rem;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+}
+
+.footer-main {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+.footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.footer-links a {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: color 0.3s;
+}
+.footer-links a:hover { color: #33c4ff; }
+
+.footer-tagline {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-bright);
+}
+
+/* ── BACK TO TOP ── */
+#back-to-top {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 99;
+  width: 48px;
+  height: 48px;
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s, background 0.3s;
+}
+#back-to-top.show { opacity: 1; pointer-events: all; }
+#back-to-top:hover { background: #33c4ff; }
+
+/* ── MOBILE ── */
+@media (max-width: 768px) {
+  nav { padding: 0 1rem; }
+
+  .hamburger { display: flex; }
+
+  .nav-links {
+    display: none;
+    position: absolute;
+    top: 64px;
+    left: 0; right: 0;
+    background: rgba(2, 8, 16, 0.97);
+    flex-direction: column;
+    padding: 1.5rem;
+    gap: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-links.open { display: flex; }
+
+  .nav-status { display: none; }
+
+  .hero-inner {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  .hero-text p { margin-left: auto; margin-right: auto; }
+  .hero-buttons { justify-content: center; }
+  .plasma-ring-container { max-width: 280px; }
+
+  .stats-row { grid-template-columns: 1fr; }
+  .mission-grid { grid-template-columns: 1fr; }
+  .project-grid { grid-template-columns: 1fr; }
+  .resource-grid { grid-template-columns: 1fr; }
+
+  section { padding: 60px 1rem; }
+  .section-title { font-size: 1.8rem; }
+  .pull-quote { font-size: 1.3rem; }
+}
+
+@media (max-width: 1024px) and (min-width: 769px) {
+  .project-grid { grid-template-columns: repeat(2, 1fr); }
+  .hero-inner { gap: 2rem; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="starfield"></canvas>
+<div class="blueprint-grid"></div>
+
+<div class="content-wrapper">
+
+<!-- ██ NAV ██ -->
+<nav>
+  <a href="#hero" class="nav-logo">
+    LAUNCH LAB
+    <span>Free Engineering for Everyone</span>
+  </a>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="#mission" onclick="closeMenu()">About</a></li>
+    <li><a href="#projects" onclick="closeMenu()">Projects</a></li>
+    <li><a href="#resources" onclick="closeMenu()">Resources</a></li>
+    <li><a href="#submit" onclick="closeMenu()">Start Here</a></li>
+  </ul>
+  <div class="nav-status">
+    <div class="dot"></div>
+    Free &middot; Always
+  </div>
+  <button class="hamburger" id="hamburger" onclick="toggleMenu()" aria-label="Toggle menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- ██ HERO ██ -->
+<section id="hero">
+  <div class="hero-inner">
+    <div class="hero-text reveal">
+      <h1>You Don't Need a Lab.<br>You Need <em>an Idea.</em></h1>
+      <p>Aerospace engineering isn't locked behind ivy gates and billion-dollar budgets. It starts with curiosity, a garage, and the guts to try. Launch Lab gives every student — no matter where they live or what they have — the projects, tools, and mentorship to build real things.</p>
+      <div class="hero-buttons">
+        <a href="#projects" class="btn btn-primary">Start Building &rarr;</a>
+        <a href="#story" class="btn btn-secondary">Read Michael's Story</a>
+      </div>
+    </div>
+    <div class="plasma-ring-container reveal reveal-delay-2">
+      <svg class="plasma-ring" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+        <circle class="plasma-glow" cx="200" cy="200" r="48"/>
+        <circle class="ring ring-1" cx="200" cy="200" r="152"/>
+        <circle class="ring ring-2" cx="200" cy="200" r="128"/>
+        <circle class="ring ring-3" cx="200" cy="200" r="104"/>
+        <line class="beam-line" x1="200" y1="200" x2="200" y2="30"/>
+        <line class="beam-line" x1="200" y1="200" x2="347" y2="115"/>
+        <line class="beam-line" x1="200" y1="200" x2="347" y2="285"/>
+        <line class="beam-line" x1="200" y1="200" x2="200" y2="370"/>
+        <line class="beam-line" x1="200" y1="200" x2="53" y2="285"/>
+        <line class="beam-line" x1="200" y1="200" x2="53" y2="115"/>
+        <circle class="plasma-core" cx="200" cy="200" r="20"/>
+        <circle class="plasma-core-inner" cx="200" cy="200" r="8"/>
+        <circle class="orbit-dot orbit-dot-1" cx="200" cy="200" r="3"/>
+        <circle class="orbit-dot orbit-dot-2" cx="200" cy="200" r="3"/>
+        <circle class="orbit-dot orbit-dot-3" cx="200" cy="200" r="3"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ██ MISSION ██ -->
+<section id="mission">
+  <div class="section-tag reveal">Our Mission</div>
+  <div class="section-title reveal">Why This Exists</div>
+
+  <div class="stats-row">
+    <div class="stat-card reveal reveal-delay-1">
+      <span class="number">130,000+</span>
+      <span class="label">Students Reached</span>
+    </div>
+    <div class="stat-card reveal reveal-delay-2">
+      <span class="number">6</span>
+      <span class="label">NASA / DoD Projects</span>
+    </div>
+    <div class="stat-card reveal reveal-delay-3">
+      <span class="number">100%</span>
+      <span class="label">Free, Forever</span>
+    </div>
+  </div>
+
+  <div class="mission-grid">
+    <div class="manifesto reveal">
+      <p>Talent is equally distributed. Opportunity is not. There are kids in small towns, rural areas, and underfunded schools who are brilliant — who could build spacecraft and design robots — but nobody ever showed them how. Nobody told them they could. Launch Lab exists to close that gap. Every guide on this site is free. Every tool we recommend is free. Every project uses parts you can buy with lawn-mowing money. We are not a nonprofit looking for donations. We are a garage full of kids who refused to wait for permission.</p>
+    </div>
+    <div class="pull-quote reveal reveal-delay-2">
+      I built my first project in a garage with $30 of parts. That's all it took.
+    </div>
+  </div>
+</section>
+
+<!-- ██ PROJECTS ██ -->
+<section id="projects">
+  <div class="section-tag reveal">Project Guides</div>
+  <div class="section-title reveal">Build Something Real</div>
+
+  <div class="project-grid">
+    <div class="project-card reveal reveal-delay-1">
+      <div class="project-num">P-001</div>
+      <h3>Ionic Wind Thruster</h3>
+      <div class="project-meta">
+        <span class="badge badge-advanced">Advanced</span>
+        <span class="badge badge-cost">~$60</span>
+      </div>
+      <p>Build a corona discharge thruster that glows blue in the dark and produces measurable thrust. The same physics NASA uses for deep-space propulsion.</p>
+      <a href="guides/p001-ionic-wind-thruster.html" class="btn btn-secondary">View Guide &rarr;</a>
+    </div>
+
+    <div class="project-card reveal reveal-delay-2">
+      <div class="project-num">P-002</div>
+      <h3>Arduino Thrust Logger</h3>
+      <div class="project-meta">
+        <span class="badge badge-intermediate">Intermediate</span>
+        <span class="badge badge-cost">~$25</span>
+      </div>
+      <p>Instrument any propulsion experiment with a load cell and Arduino. Learn to log, graph, and analyze real thrust data.</p>
+      <a href="guides/p002-arduino-thrust-logger.html" class="btn btn-secondary">View Guide &rarr;</a>
+    </div>
+
+    <div class="project-card reveal reveal-delay-3">
+      <div class="project-num">P-003</div>
+      <h3>Bioinspired Robotic Arm</h3>
+      <div class="project-meta">
+        <span class="badge badge-advanced">Advanced</span>
+        <span class="badge badge-cost">~$40</span>
+      </div>
+      <p>3D-print a cable-driven tentacle arm inspired by cephalopod biology. Ours lifted 260x its own weight.</p>
+      <a href="guides/p003-bioinspired-robotic-arm.html" class="btn btn-secondary">View Guide &rarr;</a>
+    </div>
+
+    <div class="project-card reveal reveal-delay-1">
+      <div class="project-num">P-004</div>
+      <h3>Intro to CAD: Fusion 360</h3>
+      <div class="project-meta">
+        <span class="badge badge-beginner">Beginner</span>
+        <span class="badge badge-cost">Free</span>
+      </div>
+      <p>Design your first 3D part from scratch. Goes from zero to a printable component in one afternoon.</p>
+      <a href="guides/p004-intro-to-cad.html" class="btn btn-secondary">View Guide &rarr;</a>
+    </div>
+
+    <div class="project-card reveal reveal-delay-2">
+      <div class="project-num">P-005</div>
+      <h3>High-Altitude Balloon Payload</h3>
+      <div class="project-meta">
+        <span class="badge badge-intermediate">Intermediate</span>
+        <span class="badge badge-cost">~$80</span>
+      </div>
+      <p>Design and launch a sensor payload to the stratosphere. Measure temperature, pressure, and GPS altitude in real time.</p>
+      <a href="guides/p005-high-altitude-balloon.html" class="btn btn-secondary">View Guide &rarr;</a>
+    </div>
+
+    <div class="project-card reveal reveal-delay-3">
+      <div class="project-num">P-006</div>
+      <h3>Capillary Action Experiment</h3>
+      <div class="project-meta">
+        <span class="badge badge-beginner">Beginner</span>
+        <span class="badge badge-cost">~$15</span>
+      </div>
+      <p>Study fluid behavior in simulated microgravity. A version of this experiment is flying on a NASA zero-g flight in May 2026.</p>
+      <a href="guides/p006-capillary-action-experiment.html" class="btn btn-secondary">View Guide &rarr;</a>
+    </div>
+  </div>
+</section>
+
+<!-- ██ MICHAEL'S STORY ██ -->
+<section id="story">
+  <div class="section-tag reveal">The Backstory</div>
+  <div class="section-title reveal">Michael's Story</div>
+
+  <div class="timeline">
+    <div class="timeline-node reveal">
+      <div class="timeline-date">September 2022</div>
+      <h3>Edison Academy Magnet School</h3>
+      <p>Started as a mechanical engineering major. No connections, no lab, no blueprint — just an obsession with building things.</p>
+    </div>
+
+    <div class="timeline-node reveal">
+      <div class="timeline-date">July 2024</div>
+      <h3>Department of Defense Research</h3>
+      <p>Led military packaging research at Aberdeen Proving Ground — presented findings to 200+ Army engineers.</p>
+    </div>
+
+    <div class="timeline-node reveal">
+      <div class="timeline-date">January 2025</div>
+      <h3>Colonia Fire Department</h3>
+      <p>Joined as a volunteer Explorer. Because building things and saving lives aren't mutually exclusive.</p>
+    </div>
+
+    <div class="timeline-node reveal">
+      <div class="timeline-date">July 2025</div>
+      <h3>NASA SEES — Top 80 out of 3,000</h3>
+      <p>Led a high-altitude balloon team. Presented research at the American Geophysical Union conference to 25,000+ attendees.</p>
+    </div>
+
+    <div class="timeline-node reveal">
+      <div class="timeline-date">September 2025</div>
+      <h3>SpaceX Mentorship</h3>
+      <p>Began modeling a Raptor turbopump impeller in Fusion 360. The kind of engineering most people only read about.</p>
+    </div>
+
+    <div class="timeline-node reveal">
+      <div class="timeline-date">2026</div>
+      <h3>Zero-Gravity Flight &amp; Ion Thruster</h3>
+      <p>Capillary action experiment selected for NASA parabolic flight. Built an ion thruster in a garage in Colonia. Waitlisted at Georgia Tech. Still building.</p>
+    </div>
+
+    <div class="timeline-node node-glow reveal">
+      <div class="timeline-date">Next</div>
+      <h3>Next chapter loading...</h3>
+      <p>This isn't the end. It's barely the beginning.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ██ RESOURCES ██ -->
+<section id="resources">
+  <div class="section-tag reveal">Resource Library</div>
+  <div class="section-title reveal">Everything You Need, Free</div>
+
+  <div class="resource-grid">
+    <div class="resource-card reveal reveal-delay-1">
+      <div class="resource-card-header">
+        <h3>Free Tools</h3>
+      </div>
+      <ul>
+        <li>Fusion 360 (free student license)</li>
+        <li>Tinkercad</li>
+        <li>Arduino IDE</li>
+        <li>OnShape</li>
+        <li>OpenFOAM</li>
+        <li>Python</li>
+        <li>Scratch</li>
+      </ul>
+    </div>
+
+    <div class="resource-card reveal reveal-delay-2">
+      <div class="resource-card-header">
+        <h3>Programs to Apply To</h3>
+      </div>
+      <ul>
+        <li>NASA SEES</li>
+        <li>JSTI DoD Internship</li>
+        <li>Conrad Challenge</li>
+        <li>Science Olympiad</li>
+        <li>FIRST Robotics</li>
+        <li>Regeneron STS</li>
+      </ul>
+    </div>
+
+    <div class="resource-card reveal reveal-delay-3">
+      <div class="resource-card-header">
+        <h3>How to Get Started</h3>
+      </div>
+      <ol>
+        <li>Pick one project above</li>
+        <li>Order parts (most under $50)</li>
+        <li>Document everything on GitHub</li>
+        <li>Apply to one program this year</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ██ SUBMIT ██ -->
+<div class="form-section" id="submit">
+  <div class="section-tag reveal">Show Your Work</div>
+  <div class="section-title reveal">Submit Your Build</div>
+
+  <form class="submit-form" onsubmit="handleSubmit(event)">
+    <div class="form-group reveal">
+      <label for="name">Name</label>
+      <input type="text" id="name" name="name" placeholder="Your name" required>
+    </div>
+    <div class="form-group reveal">
+      <label for="age">Age</label>
+      <input type="number" id="age" name="age" placeholder="Your age" min="8" max="25" required>
+    </div>
+    <div class="form-group reveal">
+      <label for="projectName">Project Name</label>
+      <input type="text" id="projectName" name="projectName" placeholder="What did you build?" required>
+    </div>
+    <div class="form-group reveal">
+      <label for="description">Description</label>
+      <textarea id="description" name="description" placeholder="Tell us about your project..." required></textarea>
+    </div>
+    <div class="form-group reveal">
+      <label for="learned">What did you learn?</label>
+      <textarea id="learned" name="learned" placeholder="What surprised you? What was hard? What would you do differently?" required></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary reveal" style="align-self: flex-start;">Submit Build &rarr;</button>
+  </form>
+  <p class="form-note reveal">Every submission gets featured. You built something real — the world should see it.</p>
+</div>
+
+<!-- ██ FOOTER ██ -->
+<footer>
+  <p class="footer-main">Launch Lab &middot; Founded by Michael Grimalovsky &middot; Colonia, NJ &middot; 2026</p>
+  <div class="footer-links">
+    <a href="mailto:michael@launchlab.org">Email</a>
+    <a href="https://linkedin.com/in/michaelgrimalovsky" target="_blank" rel="noopener">LinkedIn</a>
+    <a href="https://github.com/michaelgrimalovsky" target="_blank" rel="noopener">GitHub</a>
+  </div>
+  <p class="footer-tagline">Talent is equally distributed. Opportunity is not.</p>
+</footer>
+
+</div><!-- /content-wrapper -->
+
+<button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Back to top">&uarr;</button>
+
+<script>
+/* ── STARFIELD ── */
+(function() {
+  const canvas = document.getElementById('starfield');
+  const ctx = canvas.getContext('2d');
+  let stars = [];
+  const STAR_COUNT = 200;
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function initStars() {
+    stars = [];
+    for (let i = 0; i < STAR_COUNT; i++) {
+      stars.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 1.5 + 0.3,
+        baseAlpha: Math.random() * 0.6 + 0.2,
+        alpha: 0,
+        twinkleSpeed: Math.random() * 0.02 + 0.005,
+        twinkleOffset: Math.random() * Math.PI * 2,
+        hue: Math.random() > 0.7 ? 200 + Math.random() * 20 : 0,
+        isBluish: Math.random() > 0.6
+      });
+    }
+  }
+
+  function draw(time) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (const s of stars) {
+      s.alpha = s.baseAlpha + Math.sin(time * s.twinkleSpeed + s.twinkleOffset) * 0.3;
+      s.alpha = Math.max(0, Math.min(1, s.alpha));
+      if (s.isBluish) {
+        ctx.fillStyle = `hsla(${s.hue}, 80%, 80%, ${s.alpha})`;
+      } else {
+        ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
+      }
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); initStars(); });
+  resize();
+  initStars();
+  requestAnimationFrame(draw);
+})();
+
+/* ── INTERSECTION OBSERVER (scroll reveal) ── */
+(function() {
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+})();
+
+/* ── BACK TO TOP ── */
+(function() {
+  const btn = document.getElementById('back-to-top');
+  window.addEventListener('scroll', () => {
+    btn.classList.toggle('show', window.scrollY > 400);
+  });
+})();
+
+/* ── MOBILE MENU ── */
+function toggleMenu() {
+  document.getElementById('navLinks').classList.toggle('open');
+}
+function closeMenu() {
+  document.getElementById('navLinks').classList.remove('open');
+}
+
+/* ── FORM HANDLER ── */
+function handleSubmit(e) {
+  e.preventDefault();
+  const btn = e.target.querySelector('button[type="submit"]');
+  const original = btn.textContent;
+  btn.textContent = 'Submitted! ✓';
+  btn.style.background = 'var(--green)';
+  setTimeout(() => {
+    btn.textContent = original;
+    btn.style.background = '';
+    e.target.reset();
+  }, 3000);
+}
+</script>
+</body>
+</html>
