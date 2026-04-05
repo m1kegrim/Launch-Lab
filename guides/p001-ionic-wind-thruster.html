@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>P-001: Ionic Wind Thruster — Launch Lab</title>
+<meta name="description" content="Build a corona discharge ionic wind thruster from scratch. Full guide with parts list, theory, step-by-step build instructions, and safety protocols.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #020810;
+  --bg-card: #0a1628;
+  --accent: #00b4ff;
+  --accent-glow: rgba(0, 180, 255, 0.3);
+  --text: #c8d6e5;
+  --text-bright: #edf2f7;
+  --text-muted: #5a6a7a;
+  --border: #122040;
+  --green: #00ff88;
+  --yellow: #ffc107;
+  --red: #ff4444;
+  --font-mono: 'Space Mono', monospace;
+  --font-heading: 'Syne', sans-serif;
+}
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+canvas#starfield {
+  position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 0; pointer-events: none;
+}
+.blueprint-grid {
+  position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 1; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(0,180,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,180,255,0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+.content-wrapper { position: relative; z-index: 2; }
+
+/* Nav */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(2,8,16,0.85); backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem; height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-family: var(--font-heading); font-weight: 800;
+  font-size: 1.25rem; color: var(--text-bright);
+  letter-spacing: 2px; text-decoration: none;
+}
+.nav-logo span {
+  display: block; font-family: var(--font-mono);
+  font-size: 0.6rem; font-weight: 400;
+  color: var(--text-muted); letter-spacing: 1px;
+}
+.nav-back {
+  color: var(--accent); text-decoration: none;
+  font-size: 0.8rem; letter-spacing: 1px;
+  text-transform: uppercase; transition: color 0.3s;
+}
+.nav-back:hover { color: #33c4ff; }
+
+/* Guide layout */
+.guide-header {
+  padding: 120px 2rem 60px;
+  max-width: 900px; margin: 0 auto;
+}
+.guide-tag {
+  font-size: 0.7rem; text-transform: uppercase;
+  letter-spacing: 3px; color: var(--accent); margin-bottom: 0.5rem;
+}
+.guide-title {
+  font-family: var(--font-heading); font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800; color: var(--text-bright); line-height: 1.1; margin-bottom: 1rem;
+}
+.guide-subtitle {
+  font-size: 1rem; color: var(--text); max-width: 640px; margin-bottom: 2rem;
+}
+.guide-meta {
+  display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 2rem;
+}
+.meta-item {
+  font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;
+  padding: 6px 16px; border: 1px solid var(--border); color: var(--text-muted);
+}
+.meta-item strong { color: var(--text-bright); }
+.badge-advanced { background: rgba(255,100,50,0.1); color: #ff6432; border-color: rgba(255,100,50,0.2); }
+
+.guide-body {
+  max-width: 900px; margin: 0 auto; padding: 0 2rem 100px;
+}
+.guide-body h2 {
+  font-family: var(--font-heading); font-size: 1.6rem;
+  font-weight: 700; color: var(--text-bright);
+  margin: 3rem 0 1rem; padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.guide-body h3 {
+  font-family: var(--font-heading); font-size: 1.15rem;
+  font-weight: 600; color: var(--accent); margin: 2rem 0 0.75rem;
+}
+.guide-body p { margin-bottom: 1rem; }
+.guide-body ul, .guide-body ol {
+  margin: 1rem 0 1.5rem 1.5rem;
+}
+.guide-body li { margin-bottom: 0.5rem; }
+
+/* Special blocks */
+.warning-box {
+  background: rgba(255,68,68,0.08); border: 1px solid rgba(255,68,68,0.3);
+  border-left: 4px solid var(--red); padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0; font-size: 0.9rem;
+}
+.warning-box .warning-title {
+  color: var(--red); font-weight: 700; font-size: 0.8rem;
+  text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem;
+}
+.info-box {
+  background: rgba(0,180,255,0.06); border: 1px solid rgba(0,180,255,0.2);
+  border-left: 4px solid var(--accent); padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0; font-size: 0.9rem;
+}
+.info-box .info-title {
+  color: var(--accent); font-weight: 700; font-size: 0.8rem;
+  text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem;
+}
+.tip-box {
+  background: rgba(0,255,136,0.06); border: 1px solid rgba(0,255,136,0.2);
+  border-left: 4px solid var(--green); padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0; font-size: 0.9rem;
+}
+.tip-box .tip-title {
+  color: var(--green); font-weight: 700; font-size: 0.8rem;
+  text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem;
+}
+
+/* Parts table */
+.parts-table {
+  width: 100%; border-collapse: collapse; margin: 1.5rem 0;
+  font-size: 0.85rem;
+}
+.parts-table th {
+  text-align: left; padding: 10px 12px;
+  background: var(--bg-card); color: var(--accent);
+  font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;
+  border-bottom: 2px solid var(--border);
+}
+.parts-table td {
+  padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04);
+  color: var(--text);
+}
+.parts-table tr:hover td { background: rgba(0,180,255,0.03); }
+.parts-table .cost { color: var(--green); font-weight: 700; }
+
+/* Code / diagram block */
+.code-block {
+  background: var(--bg-card); border: 1px solid var(--border);
+  padding: 1.5rem; margin: 1.5rem 0; overflow-x: auto;
+  font-family: var(--font-mono); font-size: 0.8rem;
+  line-height: 1.6; color: var(--text-muted); white-space: pre;
+}
+
+/* Step cards */
+.step-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  padding: 1.5rem 1.5rem 1.5rem 4.5rem;
+  margin: 1rem 0; position: relative;
+}
+.step-card::before {
+  content: attr(data-step);
+  position: absolute; left: 1.25rem; top: 1.5rem;
+  font-family: var(--font-heading); font-size: 1.2rem;
+  font-weight: 800; color: var(--accent);
+}
+.step-card h4 {
+  font-family: var(--font-heading); font-size: 1rem;
+  font-weight: 700; color: var(--text-bright); margin-bottom: 0.5rem;
+}
+.step-card p { margin-bottom: 0.5rem; font-size: 0.9rem; }
+
+/* TOC */
+.toc {
+  background: var(--bg-card); border: 1px solid var(--border);
+  padding: 1.5rem 2rem; margin-bottom: 2rem;
+}
+.toc h3 {
+  font-family: var(--font-heading); font-size: 0.9rem;
+  color: var(--text-bright); margin-bottom: 0.75rem;
+  text-transform: uppercase; letter-spacing: 2px;
+}
+.toc ol { margin: 0 0 0 1.25rem; }
+.toc li { margin-bottom: 0.3rem; }
+.toc a {
+  color: var(--accent); text-decoration: none;
+  font-size: 0.85rem; transition: color 0.3s;
+}
+.toc a:hover { color: #33c4ff; }
+
+/* Footer */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 3rem 2rem; text-align: center;
+}
+.footer-main { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; }
+.footer-tagline {
+  font-family: var(--font-heading); font-size: 1rem;
+  font-weight: 600; color: var(--text-bright);
+}
+
+/* Reveal animation */
+.reveal {
+  opacity: 0; transform: translateY(30px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* Back to top */
+#back-to-top {
+  position: fixed; bottom: 2rem; right: 2rem; z-index: 99;
+  width: 48px; height: 48px; background: var(--accent); color: var(--bg);
+  border: none; cursor: pointer; font-size: 1.2rem;
+  display: flex; align-items: center; justify-content: center;
+  clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+  opacity: 0; pointer-events: none; transition: opacity 0.3s, background 0.3s;
+}
+#back-to-top.show { opacity: 1; pointer-events: all; }
+#back-to-top:hover { background: #33c4ff; }
+
+@media (max-width: 768px) {
+  nav { padding: 0 1rem; }
+  .guide-header { padding: 100px 1rem 40px; }
+  .guide-body { padding: 0 1rem 60px; }
+  .guide-meta { gap: 0.75rem; }
+  .step-card { padding-left: 3.5rem; }
+  .step-card::before { left: 0.75rem; }
+}
+</style>
+</head>
+<body>
+<canvas id="starfield"></canvas>
+<div class="blueprint-grid"></div>
+<div class="content-wrapper">
+
+<nav>
+  <a href="../index.html" class="nav-logo">LAUNCH LAB <span>Free Engineering for Everyone</span></a>
+  <a href="../index.html#projects" class="nav-back">&larr; All Projects</a>
+</nav>
+
+<div class="guide-header">
+  <div class="guide-tag reveal">P-001 &middot; Project Guide</div>
+  <h1 class="guide-title reveal">Ionic Wind Thruster</h1>
+  <p class="guide-subtitle reveal">Build a corona discharge thruster that glows blue in the dark and produces measurable thrust. The same physics NASA is exploring for deep-space propulsion — and you can build one on your desk.</p>
+  <div class="guide-meta reveal">
+    <span class="meta-item badge-advanced">Advanced</span>
+    <span class="meta-item"><strong>~$60</strong> total cost</span>
+    <span class="meta-item"><strong>8–12 hrs</strong> build time</span>
+    <span class="meta-item"><strong>Ages 16+</strong> (HV safety)</span>
+  </div>
+</div>
+
+<div class="guide-body">
+
+  <div class="toc reveal">
+    <h3>Table of Contents</h3>
+    <ol>
+      <li><a href="#overview">Overview & Theory</a></li>
+      <li><a href="#safety">Safety First</a></li>
+      <li><a href="#parts">Parts & Tools</a></li>
+      <li><a href="#theory-deep">How Ion Thrusters Work</a></li>
+      <li><a href="#build">Step-by-Step Build</a></li>
+      <li><a href="#testing">Testing & Measurement</a></li>
+      <li><a href="#troubleshooting">Troubleshooting</a></li>
+      <li><a href="#extensions">Going Further</a></li>
+    </ol>
+  </div>
+
+  <h2 id="overview" class="reveal">Overview & Theory</h2>
+  <p class="reveal">An ionic wind thruster (also called an electrohydrodynamic thruster or lifter) uses high voltage to ionize air molecules, accelerating them to produce thrust — with zero moving parts. The effect was first documented by Thomas Townsend Brown in the 1920s, and today, NASA's research into electroaerodynamic propulsion is reviving interest in this technology for silent, fuel-less flight.</p>
+  <p class="reveal">Your thruster will use a thin corona wire (the emitter) held at high voltage, and a larger collector electrode below it. When the voltage is high enough (~20–30 kV), the electric field at the sharp wire strips electrons from nearby air molecules, creating positive ions. These ions accelerate toward the collector, colliding with neutral air molecules along the way, transferring momentum. That cascade of collisions is the "ionic wind" — and it produces measurable thrust.</p>
+
+  <div class="info-box reveal">
+    <div class="info-title">Why This Matters</div>
+    <p>In 2018, MIT flew the first-ever solid-state airplane using ionic wind — no propeller, no turbine, no fuel burn. NASA's ongoing research suggests ion thrusters could enable whisper-quiet urban drones. You're building the fundamental physics behind the future of flight.</p>
+  </div>
+
+  <h2 id="safety" class="reveal">Safety First</h2>
+  <div class="warning-box reveal">
+    <div class="warning-title">High Voltage Warning</div>
+    <p>This project uses voltages between 20,000–30,000 volts. While the current from the power supply is low (typically under 1 mA), high voltage demands respect. A shock can cause involuntary muscle contraction, burns, or injury from falling. <strong>Never work alone. Never touch the circuit while powered. Always discharge capacitors before handling.</strong></p>
+  </div>
+  <ul class="reveal">
+    <li><strong>Always</strong> work with a buddy who knows where the power switch is.</li>
+    <li><strong>Always</strong> use one hand when near the powered circuit (keeps current from crossing your heart).</li>
+    <li><strong>Always</strong> unplug the power supply AND discharge the collector with a grounded resistor before touching anything.</li>
+    <li><strong>Never</strong> operate near flammable materials, liquids, or in a wet environment.</li>
+    <li><strong>Never</strong> leave the thruster powered unattended.</li>
+    <li>Work on a non-conductive surface (dry wood or rubber mat).</li>
+    <li>Wear rubber-soled shoes. Remove jewelry and watches.</li>
+    <li>Keep a fire extinguisher accessible (CO2 or dry chemical — NOT water).</li>
+    <li>If you're under 18, have a parent/guardian supervise every powered test.</li>
+  </ul>
+
+  <h2 id="parts" class="reveal">Parts & Tools</h2>
+  <h3 class="reveal">Bill of Materials</h3>
+  <table class="parts-table reveal">
+    <thead>
+      <tr><th>Component</th><th>Specification</th><th>Qty</th><th>Cost</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>HV Power Supply</td><td>DC 20–30kV, adjustable, &lt;1mA output (negative ion generator module)</td><td>1</td><td class="cost">$18</td></tr>
+      <tr><td>Corona Wire (Emitter)</td><td>36 AWG bare copper wire or 0.1mm tungsten wire</td><td>1m</td><td class="cost">$3</td></tr>
+      <tr><td>Collector Electrode</td><td>Aluminum foil strips, 3cm wide, or aluminum flashing</td><td>1 roll</td><td class="cost">$5</td></tr>
+      <tr><td>Balsa Wood Frame</td><td>3mm × 3mm balsa sticks, 30cm long</td><td>10</td><td class="cost">$6</td></tr>
+      <tr><td>Insulating Supports</td><td>Nylon standoffs or wooden dowels, 3–4cm tall</td><td>8</td><td class="cost">$3</td></tr>
+      <tr><td>12V DC Power Adapter</td><td>12V 1A wall adapter (input for HV module)</td><td>1</td><td class="cost">$8</td></tr>
+      <tr><td>Silicone Wire</td><td>22 AWG, high-voltage rated silicone insulation</td><td>2m</td><td class="cost">$4</td></tr>
+      <tr><td>Discharge Resistor</td><td>10MΩ resistor, 1W rating</td><td>2</td><td class="cost">$2</td></tr>
+      <tr><td>Digital Multimeter</td><td>For continuity checks (you likely own one)</td><td>1</td><td class="cost">$0</td></tr>
+      <tr><td>Precision Scale</td><td>0.01g resolution (for thrust measurement)</td><td>1</td><td class="cost">$10</td></tr>
+      <tr><td>Miscellaneous</td><td>Super glue, alligator clips, electrical tape, sandpaper</td><td>—</td><td class="cost">$4</td></tr>
+    </tbody>
+    <tfoot>
+      <tr><td colspan="3" style="text-align:right; font-weight:700; color: var(--text-bright);">Estimated Total</td><td class="cost" style="font-size:1rem;">~$63</td></tr>
+    </tfoot>
+  </table>
+
+  <h3 class="reveal">Tools Required</h3>
+  <ul class="reveal">
+    <li>Hobby knife / X-acto blade</li>
+    <li>Ruler and cutting mat</li>
+    <li>Wire strippers / fine scissors</li>
+    <li>Soldering iron (for power supply connections)</li>
+    <li>Hot glue gun (for insulating connections)</li>
+    <li>Small clamps or clips</li>
+  </ul>
+
+  <h2 id="theory-deep" class="reveal">How Ion Thrusters Work</h2>
+  <p class="reveal">The thruster relies on three fundamental physics principles:</p>
+
+  <h3 class="reveal">1. Corona Discharge</h3>
+  <p class="reveal">When you apply a very high voltage to a thin wire (small radius of curvature), the electric field at the wire surface becomes intense enough to ionize nearby gas molecules. For air at atmospheric pressure, this happens at roughly 30 kV/cm at the wire surface. The thin wire geometry concentrates the field — a 0.1mm wire at 25kV easily exceeds this threshold.</p>
+
+  <h3 class="reveal">2. Ion Drift & Momentum Transfer</h3>
+  <p class="reveal">The positive ions created at the corona wire accelerate toward the negative collector. As they travel through the 3–4cm air gap, each ion collides with thousands of neutral air molecules, transferring momentum to them. It's like a bowling ball (ion) plowing through a crowd of ping-pong balls (air molecules). The cumulative momentum transfer of billions of ions per second produces a measurable wind — and by Newton's third law, a thrust force on the electrodes.</p>
+
+  <h3 class="reveal">3. The Thrust Equation</h3>
+  <p class="reveal">For an EHD thruster, thrust (F) is approximately proportional to the ion current (I) times the electrode gap distance (d), divided by ion mobility (μ):</p>
+  <div class="code-block reveal">F ≈ I × d / μ
+
+Where:
+  F = thrust force (Newtons)
+  I = ion current (Amps) — typically 0.1–0.5 mA
+  d = electrode gap (meters) — typically 0.03–0.04 m  
+  μ = ion mobility in air ≈ 2 × 10⁻⁴ m²/(V·s)
+
+Example: I = 0.3mA, d = 0.03m
+  F = (3×10⁻⁴ × 0.03) / (2×10⁻⁴)
+  F = 0.045 N ≈ 4.6 grams-force</div>
+
+  <div class="info-box reveal">
+    <div class="info-title">Key Insight</div>
+    <p>Thrust scales linearly with current and gap distance. To increase thrust: increase voltage (more current), lengthen your wire (more corona area), or optimize your gap distance. But there's a limit — if the gap is too small or voltage too high, you'll get an arc discharge (a spark) instead of smooth corona, which kills thrust and can damage the supply.</p>
+  </div>
+
+  <h2 id="build" class="reveal">Step-by-Step Build</h2>
+
+  <div class="step-card reveal" data-step="01">
+    <h4>Build the Frame</h4>
+    <p>Cut balsa sticks into four 25cm lengths for the main horizontal frame, and eight 4cm pieces for vertical supports. Glue the horizontal pieces into a rectangular frame (25cm × 10cm). Sand any rough edges.</p>
+    <p>The frame needs to be rigid but lightweight. Balsa is ideal — strong enough to hold the electrodes, light enough that thrust can move it.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="02">
+    <h4>Mount the Collector (Bottom Electrode)</h4>
+    <p>Cut a strip of aluminum foil 3cm wide and long enough to wrap around the bottom perimeter of the frame (approximately 70cm). Fold the foil over the bottom balsa sticks so it forms a "skirt" hanging about 2.5cm below the frame on all sides. Secure with small dabs of super glue.</p>
+    <p>The collector should form a continuous conductive loop around the frame. Use a multimeter to verify continuity all the way around — any break will create a dead zone with no thrust.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="03">
+    <h4>Install Insulating Supports</h4>
+    <p>Glue the 4cm vertical nylon standoffs or wooden dowels to the top of the frame at each corner, and one at the midpoint of each long side (6 total). These will hold the corona wire above the collector.</p>
+    <p>The gap between the corona wire and the top edge of the aluminum collector should be 3–4cm. This is your "acceleration gap." Too close → arc. Too far → weak field → low thrust.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="04">
+    <h4>String the Corona Wire (Emitter)</h4>
+    <p>Run a single continuous strand of 36 AWG copper wire (or 0.1mm tungsten) around the tops of the standoffs, creating a wire loop above the collector. Keep the wire taut — any sag changes the local gap distance and creates uneven thrust.</p>
+    <p>Secure the wire to each standoff with a tiny notch cut into the top. Leave 15cm of extra wire at one end for the HV connection.</p>
+    <div class="code-block">SIDE VIEW (cross-section):
+
+    Corona Wire (+ or floating)
+    ─────────────●─────────────  ← 36 AWG copper, taut
+                 │
+           3-4cm │  ← acceleration gap (air)
+                 │
+    ═════════════╪═════════════  ← Aluminum foil collector (−)
+    ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ← Balsa frame
+    
+TOP VIEW:
+    ┌──────────────────────────┐
+    │  ● ─ ─ ─ ─ ● ─ ─ ─ ─ ● │  ← Corona wire on standoffs
+    │  │                     │ │
+    │  │    AIR GAP          │ │
+    │  │                     │ │
+    │  ● ─ ─ ─ ─ ● ─ ─ ─ ─ ● │
+    └──────────────────────────┘
+    ▓ = Aluminum foil collector wraps the bottom</div>
+  </div>
+
+  <div class="step-card reveal" data-step="05">
+    <h4>Wire the High-Voltage Power Supply</h4>
+    <p>Connect the 12V DC adapter to the input terminals of the HV module. Connect the HV module's <strong>positive output</strong> to the corona wire using silicone-insulated wire and an alligator clip. Connect the <strong>negative output</strong> to the aluminum foil collector.</p>
+    <p>Solder all connections on the low-voltage side. On the HV side, use alligator clips wrapped in electrical tape. Route HV wires away from each other and away from the frame.</p>
+    <div class="code-block">WIRING DIAGRAM:
+
+    [12V Wall Adapter]
+         │  │
+         +  −
+         │  │
+    ┌────┴──┴────┐
+    │  HV Module │
+    │  (20-30kV) │
+    └────┬──┬────┘
+         +  −
+         │  │
+         │  └──── → Aluminum Collector (bottom)
+         │
+         └──────── → Corona Wire (top)
+         
+    ⚡ Add 10MΩ discharge resistor across + and − 
+       output for safe bleed-down after power off</div>
+  </div>
+
+  <div class="warning-box reveal">
+    <div class="warning-title">Before First Power-On</div>
+    <p>Triple-check: (1) No loose wires touching unintended surfaces. (2) HV connections are secure and insulated at junction points. (3) Your discharge resistor is wired across the HV output. (4) Your buddy is present and knows where the power switch is. (5) Nothing flammable is within 1 meter.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="06">
+    <h4>First Power Test</h4>
+    <p>Place the thruster on a non-conductive surface. Stand back. Have your buddy at the switch. Power on the 12V supply. You should see and hear:</p>
+    <ul>
+      <li><strong>A faint hissing sound</strong> — this is the ionic wind.</li>
+      <li><strong>A blue/purple glow</strong> around the corona wire in a dark room — this is the plasma discharge.</li>
+      <li><strong>A slight breeze</strong> if you hold your hand 10cm below the collector (power off first to test the residual wind, or use a candle nearby to see deflection).</li>
+      <li><strong>The smell of ozone</strong> — work in a ventilated area.</li>
+    </ul>
+    <p>If you hear a loud snap or see a bright spark, that's an arc. Power off immediately. Your gap is too small or there's a sharp point on the collector creating a field concentration. Sand the collector edges smooth and increase the gap slightly.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="07">
+    <h4>Optimize for Maximum Thrust</h4>
+    <p>Now iterate. This is where engineering happens:</p>
+    <ul>
+      <li><strong>Gap distance:</strong> Try 2.5cm, 3cm, 3.5cm, 4cm. Measure thrust at each. You'll find a sweet spot where corona is stable but field is strong.</li>
+      <li><strong>Wire tension:</strong> Tighter wire = more uniform field = smoother thrust.</li>
+      <li><strong>Collector geometry:</strong> Try different widths. A wider collector captures more ion flow.</li>
+      <li><strong>Voltage:</strong> If your HV module is adjustable, sweep from 15kV up. Plot thrust vs. voltage. You should see a roughly linear increase until arcing begins.</li>
+    </ul>
+  </div>
+
+  <h2 id="testing" class="reveal">Testing & Measurement</h2>
+  <h3 class="reveal">Measuring Thrust</h3>
+  <p class="reveal">Place the thruster on your precision scale (0.01g resolution). Record the weight with power off. Power on and record the new reading. The difference is your thrust force:</p>
+  <div class="code-block reveal">Thrust (grams-force) = Weight_off − Weight_on
+
+Example readings:
+  Power OFF: 12.45g
+  Power ON:  12.38g
+  Thrust:     0.07g = 0.69 mN
+
+For your lab notebook, convert:
+  1 gram-force = 9.81 mN = 0.00981 N</div>
+
+  <h3 class="reveal">Data Collection Protocol</h3>
+  <ol class="reveal">
+    <li>Let the scale stabilize for 30 seconds before each reading.</li>
+    <li>Take 5 measurements at each setting and average them.</li>
+    <li>Record: date, voltage setting, gap distance, ambient temperature, humidity.</li>
+    <li>Photograph the setup at each configuration.</li>
+    <li>Create a spreadsheet. Plot thrust vs. voltage, thrust vs. gap distance.</li>
+  </ol>
+
+  <div class="tip-box reveal">
+    <div class="tip-title">Pro Tip: Documenting for Competitions</div>
+    <p>If you're entering a science fair or competition, your data collection rigor matters as much as the project itself. Judges want to see: controlled variables, repeated trials, error bars on your graphs, and honest discussion of what didn't work. Take a photo of every test run. Film your blue glow in the dark — it's visually stunning and makes your presentation unforgettable.</p>
+  </div>
+
+  <h2 id="troubleshooting" class="reveal">Troubleshooting</h2>
+  <table class="parts-table reveal">
+    <thead>
+      <tr><th>Problem</th><th>Likely Cause</th><th>Fix</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>No glow, no hissing</td><td>HV module not outputting / broken connection</td><td>Check 12V input with multimeter. Verify HV module works by carefully testing with a neon bulb (it should glow near the output wire).</td></tr>
+      <tr><td>Sparking / arcing</td><td>Gap too small; sharp points on collector</td><td>Increase gap to 4cm. Sand all foil edges smooth. Ensure no foil burrs point toward the corona wire.</td></tr>
+      <tr><td>Uneven glow along wire</td><td>Wire sag; uneven gap</td><td>Re-tension the corona wire. Check all standoffs are the same height.</td></tr>
+      <tr><td>Thrust is very low (&lt;0.02g)</td><td>Low voltage; air too humid; poor corona</td><td>Increase voltage if adjustable. Test on a dry day. Clean the corona wire with fine sandpaper.</td></tr>
+      <tr><td>Strong ozone smell</td><td>Normal — but don't breathe it</td><td>Work near an open window or use a small fan to disperse ozone away from you.</td></tr>
+      <tr><td>HV module gets hot</td><td>Drawing too much current (possible short)</td><td>Power off immediately. Check for unintended contact between HV wires. Inspect for carbon tracks on frame (arcing can leave conductive residue on wood).</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="extensions" class="reveal">Going Further</h2>
+  <h3 class="reveal">Multi-Stage Thruster</h3>
+  <p class="reveal">Stack two thrusters vertically — the output wind of the first stage feeds into the second. Measure whether thrust scales. This mimics multi-stage compressor design in real engines.</p>
+
+  <h3 class="reveal">Asymmetric Electrode Design</h3>
+  <p class="reveal">Replace the flat collector with a curved airfoil profile. Test whether shaping the collector changes thrust direction or efficiency. This is active research at MIT.</p>
+
+  <h3 class="reveal">Combine with P-002: Arduino Thrust Logger</h3>
+  <p class="reveal">Instead of manual scale readings, build the <a href="p002-arduino-thrust-logger.html" style="color:var(--accent)">Arduino Thrust Logger</a> and measure thrust continuously while sweeping voltage. Generate real-time thrust-vs-voltage curves automatically.</p>
+
+  <h3 class="reveal">Vacuum Chamber Testing</h3>
+  <p class="reveal">If you can access or build a simple vacuum chamber (bell jar + hand pump), test how thrust changes with reduced air pressure. At lower pressures, mean free path increases — ions travel farther between collisions. You'll discover the fundamental tradeoff between atmospheric and space ion propulsion.</p>
+
+  <h3 class="reveal">Write It Up</h3>
+  <p class="reveal">Document your results in a proper lab report or research paper format. If your data is solid, consider submitting to: your regional science fair, the Conrad Challenge, or Regeneron STS. Ionic wind propulsion is a genuinely active research area — your garage experiment is legitimate science.</p>
+
+  <div class="info-box reveal">
+    <div class="info-title">You Just Built Rocket Science</div>
+    <p>Not metaphorically. The physics in your thruster is the same physics in NASA's Dawn spacecraft ion engine, in the MIT/Lincoln Lab EAD airplane, and in next-generation drone propulsion research. The difference between your project and theirs is budget and scale — not principle. You now understand something most aerospace undergrads don't learn until junior year.</p>
+  </div>
+
+</div>
+
+<footer>
+  <p class="footer-main">Launch Lab &middot; Founded by Michael Grimalovsky &middot; Colonia, NJ &middot; 2026</p>
+  <p class="footer-tagline">Talent is equally distributed. Opportunity is not.</p>
+</footer>
+
+</div>
+
+<button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">&uarr;</button>
+
+<script>
+(function(){const c=document.getElementById('starfield'),x=c.getContext('2d');let s=[];function r(){c.width=innerWidth;c.height=innerHeight}function i(){s=[];for(let j=0;j<150;j++)s.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.2+0.3,a:Math.random()*0.5+0.2,sp:Math.random()*0.02+0.005,o:Math.random()*Math.PI*2,b:Math.random()>0.6})}function d(t){x.clearRect(0,0,c.width,c.height);for(const p of s){let a=p.a+Math.sin(t*p.sp+p.o)*0.3;a=Math.max(0,Math.min(1,a));x.fillStyle=p.b?`hsla(210,80%,80%,${a})`:`rgba(255,255,255,${a})`;x.beginPath();x.arc(p.x,p.y,p.r,0,Math.PI*2);x.fill()}requestAnimationFrame(d)}addEventListener('resize',()=>{r();i()});r();i();requestAnimationFrame(d)})();
+(function(){const o=new IntersectionObserver(e=>{e.forEach(el=>{if(el.isIntersecting)el.target.classList.add('visible')})},{threshold:0.1});document.querySelectorAll('.reveal').forEach(el=>o.observe(el))})();
+(function(){const b=document.getElementById('back-to-top');addEventListener('scroll',()=>{b.classList.toggle('show',scrollY>400)})})();
+</script>
+</body>
+</html>

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>P-004: Intro to CAD — Fusion 360 — Launch Lab</title>
+<meta name="description" content="Learn CAD from zero. Design your first 3D part in Fusion 360 and get it ready to 3D print — in one afternoon.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #020810; --bg-card: #0a1628; --accent: #00b4ff;
+  --accent-glow: rgba(0,180,255,0.3); --text: #c8d6e5;
+  --text-bright: #edf2f7; --text-muted: #5a6a7a;
+  --border: #122040; --green: #00ff88; --yellow: #ffc107; --red: #ff4444;
+  --font-mono: 'Space Mono', monospace; --font-heading: 'Syne', sans-serif;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--font-mono); font-size: 15px; line-height: 1.7; overflow-x: hidden; }
+canvas#starfield { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+.blueprint-grid { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; background-image: linear-gradient(rgba(0,180,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,180,255,0.03) 1px, transparent 1px); background-size: 60px 60px; }
+.content-wrapper { position: relative; z-index: 2; }
+nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(2,8,16,0.85); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); padding: 0 2rem; height: 64px; display: flex; align-items: center; justify-content: space-between; }
+.nav-logo { font-family: var(--font-heading); font-weight: 800; font-size: 1.25rem; color: var(--text-bright); letter-spacing: 2px; text-decoration: none; }
+.nav-logo span { display: block; font-family: var(--font-mono); font-size: 0.6rem; font-weight: 400; color: var(--text-muted); letter-spacing: 1px; }
+.nav-back { color: var(--accent); text-decoration: none; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; transition: color 0.3s; }
+.nav-back:hover { color: #33c4ff; }
+.guide-header { padding: 120px 2rem 60px; max-width: 900px; margin: 0 auto; }
+.guide-tag { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 3px; color: var(--accent); margin-bottom: 0.5rem; }
+.guide-title { font-family: var(--font-heading); font-size: clamp(2rem,4vw,3rem); font-weight: 800; color: var(--text-bright); line-height: 1.1; margin-bottom: 1rem; }
+.guide-subtitle { font-size: 1rem; color: var(--text); max-width: 640px; margin-bottom: 2rem; }
+.guide-meta { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 2rem; }
+.meta-item { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; padding: 6px 16px; border: 1px solid var(--border); color: var(--text-muted); }
+.meta-item strong { color: var(--text-bright); }
+.badge-beginner { background: rgba(0,255,136,0.1); color: var(--green); border-color: rgba(0,255,136,0.2); }
+.guide-body { max-width: 900px; margin: 0 auto; padding: 0 2rem 100px; }
+.guide-body h2 { font-family: var(--font-heading); font-size: 1.6rem; font-weight: 700; color: var(--text-bright); margin: 3rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+.guide-body h3 { font-family: var(--font-heading); font-size: 1.15rem; font-weight: 600; color: var(--accent); margin: 2rem 0 0.75rem; }
+.guide-body p { margin-bottom: 1rem; }
+.guide-body ul, .guide-body ol { margin: 1rem 0 1.5rem 1.5rem; }
+.guide-body li { margin-bottom: 0.5rem; }
+.info-box { background: rgba(0,180,255,0.06); border: 1px solid rgba(0,180,255,0.2); border-left: 4px solid var(--accent); padding: 1.25rem 1.5rem; margin: 1.5rem 0; font-size: 0.9rem; }
+.info-box .info-title { color: var(--accent); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+.tip-box { background: rgba(0,255,136,0.06); border: 1px solid rgba(0,255,136,0.2); border-left: 4px solid var(--green); padding: 1.25rem 1.5rem; margin: 1.5rem 0; font-size: 0.9rem; }
+.tip-box .tip-title { color: var(--green); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+.warning-box { background: rgba(255,68,68,0.08); border: 1px solid rgba(255,68,68,0.3); border-left: 4px solid var(--red); padding: 1.25rem 1.5rem; margin: 1.5rem 0; font-size: 0.9rem; }
+.warning-box .warning-title { color: var(--red); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+.code-block { background: var(--bg-card); border: 1px solid var(--border); padding: 1.5rem; margin: 1.5rem 0; overflow-x: auto; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6; color: var(--text-muted); white-space: pre; }
+.step-card { background: var(--bg-card); border: 1px solid var(--border); padding: 1.5rem 1.5rem 1.5rem 4.5rem; margin: 1rem 0; position: relative; }
+.step-card::before { content: attr(data-step); position: absolute; left: 1.25rem; top: 1.5rem; font-family: var(--font-heading); font-size: 1.2rem; font-weight: 800; color: var(--accent); }
+.step-card h4 { font-family: var(--font-heading); font-size: 1rem; font-weight: 700; color: var(--text-bright); margin-bottom: 0.5rem; }
+.step-card p { margin-bottom: 0.5rem; font-size: 0.9rem; }
+.toc { background: var(--bg-card); border: 1px solid var(--border); padding: 1.5rem 2rem; margin-bottom: 2rem; }
+.toc h3 { font-family: var(--font-heading); font-size: 0.9rem; color: var(--text-bright); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 2px; }
+.toc ol { margin: 0 0 0 1.25rem; }
+.toc li { margin-bottom: 0.3rem; }
+.toc a { color: var(--accent); text-decoration: none; font-size: 0.85rem; transition: color 0.3s; }
+.toc a:hover { color: #33c4ff; }
+.shortcut-table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.85rem; }
+.shortcut-table th { text-align: left; padding: 10px 12px; background: var(--bg-card); color: var(--accent); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid var(--border); }
+.shortcut-table td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); color: var(--text); }
+.shortcut-table tr:hover td { background: rgba(0,180,255,0.03); }
+.shortcut-table .key { color: var(--accent); font-weight: 700; font-family: var(--font-mono); }
+footer { border-top: 1px solid var(--border); padding: 3rem 2rem; text-align: center; }
+.footer-main { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; }
+.footer-tagline { font-family: var(--font-heading); font-size: 1rem; font-weight: 600; color: var(--text-bright); }
+.reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+#back-to-top { position: fixed; bottom: 2rem; right: 2rem; z-index: 99; width: 48px; height: 48px; background: var(--accent); color: var(--bg); border: none; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%); opacity: 0; pointer-events: none; transition: opacity 0.3s, background 0.3s; }
+#back-to-top.show { opacity: 1; pointer-events: all; }
+#back-to-top:hover { background: #33c4ff; }
+@media (max-width: 768px) { nav { padding: 0 1rem; } .guide-header { padding: 100px 1rem 40px; } .guide-body { padding: 0 1rem 60px; } .step-card { padding-left: 3.5rem; } .step-card::before { left: 0.75rem; } }
+</style>
+</head>
+<body>
+<canvas id="starfield"></canvas>
+<div class="blueprint-grid"></div>
+<div class="content-wrapper">
+
+<nav>
+  <a href="../index.html" class="nav-logo">LAUNCH LAB <span>Free Engineering for Everyone</span></a>
+  <a href="../index.html#projects" class="nav-back">&larr; All Projects</a>
+</nav>
+
+<div class="guide-header">
+  <div class="guide-tag reveal">P-004 &middot; Project Guide</div>
+  <h1 class="guide-title reveal">Intro to CAD: Fusion 360</h1>
+  <p class="guide-subtitle reveal">Design your first 3D part from scratch. Goes from zero to a printable component in one afternoon. This is where every physical project begins.</p>
+  <div class="guide-meta reveal">
+    <span class="meta-item badge-beginner">Beginner</span>
+    <span class="meta-item"><strong>Free</strong></span>
+    <span class="meta-item"><strong>3–4 hrs</strong> to complete</span>
+    <span class="meta-item"><strong>Ages 12+</strong></span>
+  </div>
+</div>
+
+<div class="guide-body">
+
+  <div class="toc reveal">
+    <h3>Table of Contents</h3>
+    <ol>
+      <li><a href="#what">What is CAD?</a></li>
+      <li><a href="#setup">Setup & Installation</a></li>
+      <li><a href="#interface">The Fusion 360 Interface</a></li>
+      <li><a href="#shortcuts">Essential Keyboard Shortcuts</a></li>
+      <li><a href="#project1">Project: Phone Stand</a></li>
+      <li><a href="#sketching">Deep Dive: Sketching</a></li>
+      <li><a href="#features">Deep Dive: 3D Features</a></li>
+      <li><a href="#export">Exporting for 3D Printing</a></li>
+      <li><a href="#project2">Project: Custom Wrench</a></li>
+      <li><a href="#next">What's Next</a></li>
+    </ol>
+  </div>
+
+  <h2 id="what" class="reveal">What is CAD?</h2>
+  <p class="reveal">CAD stands for Computer-Aided Design. It's how every physical product in the modern world gets designed before it's built — from smartphone cases to spacecraft. Instead of sketching on paper and hoping your dimensions are right, you build a precise 3D digital model that you can measure, modify, simulate, and send directly to a 3D printer, CNC machine, or manufacturer.</p>
+  <p class="reveal">Fusion 360 is a professional-grade CAD/CAM tool made by Autodesk. It's used at real engineering companies and is completely free for students and personal use. SpaceX engineers use NX and CATIA, but the core concepts are identical — once you learn one parametric CAD tool, you can learn any other in a week.</p>
+
+  <div class="info-box reveal">
+    <div class="info-title">Why Fusion 360?</div>
+    <p>Free for students. Runs on Windows and Mac. Cloud-saves your work automatically. Has integrated simulation, rendering, and CAM (manufacturing) tools. The student license lasts 1 year and is renewable indefinitely while you're in school.</p>
+  </div>
+
+  <h2 id="setup" class="reveal">Setup & Installation</h2>
+  <div class="step-card reveal" data-step="01">
+    <h4>Create an Autodesk Account</h4>
+    <p>Go to <a href="https://www.autodesk.com/products/fusion-360/personal" style="color:var(--accent)">autodesk.com/products/fusion-360/personal</a>. Click "Get Started." Create an Autodesk account with your email. If you have a school email (.edu), use it — the student license has fewer restrictions.</p>
+  </div>
+  <div class="step-card reveal" data-step="02">
+    <h4>Download & Install</h4>
+    <p>After creating your account, download the installer. It's about 2GB. Install it, sign in with your Autodesk credentials, and you're ready. The first launch takes a minute to sync — that's normal.</p>
+  </div>
+  <div class="step-card reveal" data-step="03">
+    <h4>Set Your Units</h4>
+    <p>First thing after opening: go to your profile icon (top right) → Preferences → Default Units. Set to <strong>millimeters</strong>. The entire 3D printing and engineering world uses metric. Get comfortable with it now.</p>
+  </div>
+
+  <h2 id="interface" class="reveal">The Fusion 360 Interface</h2>
+  <div class="code-block reveal">┌─────────────────────────────────────────────────────┐
+│ [Data Panel]  [File]  [DESIGN ▼]                    │ ← Top menu bar
+├─────────────────────────────────────────────────────┤
+│ ┌─────────────────────────────────────────────────┐ │
+│ │ TOOLBAR                                         │ │
+│ │ [Sketch▼][Create▼][Modify▼][Assemble▼][...    ]│ │ ← Main toolbar
+│ └─────────────────────────────────────────────────┘ │
+│                                                     │
+│   ┌────────┐                                        │
+│   │BROWSER │    ┌──────────────────────────┐        │
+│   │        │    │                          │        │
+│   │Bodies  │    │     3D VIEWPORT          │        │ ← Where you see
+│   │Sketches│    │     (your model)         │        │   your model
+│   │Origins │    │                          │        │
+│   │        │    │          ◆               │        │
+│   │        │    │                          │        │
+│   └────────┘    └──────────────────────────┘        │
+│                              ┌─────┐                │
+│                              │CUBE │ ← ViewCube     │ ← Click to rotate
+│                              └─────┘   (navigation) │   to standard views
+│ [Timeline ─────────●────────────────────────── ]    │ ← Design timeline
+└─────────────────────────────────────────────────────┘
+
+Key areas:
+• TOOLBAR — your main tools: sketch, extrude, fillet, etc.
+• BROWSER (left panel) — shows all bodies, sketches, origins
+• VIEWPORT — the 3D space where you work
+• VIEWCUBE — click faces/corners to snap to standard views
+• TIMELINE — every operation you perform appears here. 
+  You can go back in time and edit any step.</div>
+
+  <h3 class="reveal">Navigation (memorize these immediately)</h3>
+  <ul class="reveal">
+    <li><strong>Orbit:</strong> Hold middle mouse button and drag</li>
+    <li><strong>Pan:</strong> Hold middle mouse button + Shift and drag</li>
+    <li><strong>Zoom:</strong> Scroll wheel</li>
+    <li><strong>Zoom to fit:</strong> Double-click middle mouse button (or press F key)</li>
+  </ul>
+
+  <h2 id="shortcuts" class="reveal">Essential Keyboard Shortcuts</h2>
+  <table class="shortcut-table reveal">
+    <thead>
+      <tr><th>Shortcut</th><th>Action</th><th>When to Use</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="key">S</td><td>Search / Shortcut bar</td><td>Find any command by typing its name</td></tr>
+      <tr><td class="key">L</td><td>Line tool</td><td>Drawing straight lines in a sketch</td></tr>
+      <tr><td class="key">C</td><td>Circle tool</td><td>Drawing circles (center + radius)</td></tr>
+      <tr><td class="key">R</td><td>Rectangle tool</td><td>Drawing rectangles (two-point)</td></tr>
+      <tr><td class="key">D</td><td>Dimension</td><td>Setting exact sizes on sketch geometry</td></tr>
+      <tr><td class="key">E</td><td>Extrude</td><td>Turning a 2D sketch into a 3D solid</td></tr>
+      <tr><td class="key">Q</td><td>Press/Pull</td><td>Modifying existing faces (push in or pull out)</td></tr>
+      <tr><td class="key">F</td><td>Fillet</td><td>Rounding edges / corners</td></tr>
+      <tr><td class="key">M</td><td>Move</td><td>Moving or rotating bodies/components</td></tr>
+      <tr><td class="key">Ctrl+Z</td><td>Undo</td><td>Your best friend. Use liberally.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="project1" class="reveal">Project: Phone Stand</h2>
+  <p class="reveal">Let's build a simple phone stand — a real, useful object you can 3D print today. It teaches the core workflow: sketch → extrude → modify → export.</p>
+
+  <div class="step-card reveal" data-step="01">
+    <h4>Create a New Design</h4>
+    <p>File → New Design. You'll see an empty viewport with the origin planes (XY, XZ, YZ) visible. The small axes icon at the center shows X (red), Y (green), Z (blue).</p>
+  </div>
+
+  <div class="step-card reveal" data-step="02">
+    <h4>Start a Sketch on the XZ Plane</h4>
+    <p>Click "Create Sketch" in the toolbar. Click the XZ plane (the horizontal ground plane) in the viewport. You're now in sketch mode — the viewport flattens to a 2D view of that plane.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="03">
+    <h4>Draw the Base Profile</h4>
+    <p>Press <strong>R</strong> for rectangle. Click the origin point, then drag out a rectangle. Don't worry about exact size yet — just get a shape down. Press <strong>Escape</strong> to exit the tool.</p>
+    <p>Now add dimensions: Press <strong>D</strong>, click the bottom edge of the rectangle, and type <strong>80</strong> (that's 80mm). Press Enter. Click the side edge, type <strong>60</strong>. Press Enter. The rectangle is now exactly 80mm × 60mm. It turned from blue (under-defined) to black (fully constrained).</p>
+  </div>
+
+  <div class="step-card reveal" data-step="04">
+    <h4>Extrude the Base</h4>
+    <p>Click "Finish Sketch" (green checkmark, top right). Now press <strong>E</strong> for extrude. Click the rectangle face. Drag the arrow up or type <strong>5</strong> for 5mm thick. Press Enter. You now have a 3D rectangular slab. That's your base.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="05">
+    <h4>Create the Back Support</h4>
+    <p>Click on the back edge's top face of the base slab. Create a new sketch on that face. Draw a rectangle starting from the back edge: 80mm wide × 70mm tall. Finish the sketch. Extrude it <strong>5mm</strong>. You now have an L-shaped stand.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="06">
+    <h4>Add a Phone Lip</h4>
+    <p>Your phone needs something to rest against at the bottom. Click the top face of the base. Create a sketch. Draw a rectangle along the front edge: 80mm × 10mm. Finish sketch. Extrude it <strong>15mm</strong> upward. Now there's a small wall at the front to catch your phone.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="07">
+    <h4>Add Fillets (Rounded Edges)</h4>
+    <p>Press <strong>F</strong> for fillet. Click the sharp vertical edges of the back support. Set radius to <strong>3mm</strong>. Press Enter. Do the same for the phone lip's top edges. Fillets make the design look professional and feel better in your hand. They also reduce stress concentrations — that's a real engineering principle.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="08">
+    <h4>Add a Cable Slot (Optional)</h4>
+    <p>Create a sketch on the back support's face. Draw a centered rectangle: 15mm wide × the full height of the back support. Finish sketch. Extrude it using "Cut" mode (toggle from "New Body" to "Cut" in the extrude dialog) with a distance of <strong>5mm</strong> (through the wall). Now your phone's charging cable can pass through.</p>
+  </div>
+
+  <div class="code-block reveal">YOUR PHONE STAND (side profile):
+
+                ┌─────┐
+                │     │ ← Back support
+                │     │   (70mm tall, 5mm thick)
+                │     │
+                │     │
+                │     │
+    ┌───┐       │     │
+    │   │───────┴─────┘ ← Base (80×60×5mm)
+    │   │
+    └───┘
+      ↑
+   Phone lip
+   (15mm tall)</div>
+
+  <div class="tip-box reveal">
+    <div class="tip-title">Congratulations</div>
+    <p>You just completed the entire CAD workflow: sketch a 2D profile → extrude it into 3D → modify with fillets and cuts. Every single CAD project in the world — from phone cases to rocket nozzles — uses this same loop. The complexity changes, the workflow doesn't.</p>
+  </div>
+
+  <h2 id="sketching" class="reveal">Deep Dive: Sketching</h2>
+  <h3 class="reveal">Constraints</h3>
+  <p class="reveal">Sketches in Fusion 360 aren't just drawings — they're systems of geometric constraints. When you draw two lines that meet at a corner, Fusion automatically adds a "coincident" constraint. When you draw a horizontal line, it adds a "horizontal" constraint. These constraints lock your geometry so it behaves predictably when you change dimensions.</p>
+  <p class="reveal">Key constraints to learn:</p>
+  <ul class="reveal">
+    <li><strong>Coincident:</strong> Two points share the same location.</li>
+    <li><strong>Horizontal / Vertical:</strong> A line is locked to that orientation.</li>
+    <li><strong>Parallel:</strong> Two lines stay parallel regardless of position changes.</li>
+    <li><strong>Perpendicular:</strong> Two lines maintain a 90° angle.</li>
+    <li><strong>Equal:</strong> Two lines or circles stay the same size.</li>
+    <li><strong>Tangent:</strong> A line meets a curve smoothly (no sharp corner).</li>
+    <li><strong>Concentric:</strong> Two circles share the same center point.</li>
+  </ul>
+
+  <h3 class="reveal">Fully Constrained Sketches</h3>
+  <p class="reveal">A sketch is "fully constrained" when every element's position and size is determined — nothing can be dragged around. Fully constrained sketches turn from blue/green to black. Always aim for this. Under-constrained sketches cause problems later when you modify dimensions and the geometry warps unpredictably.</p>
+
+  <h2 id="features" class="reveal">Deep Dive: 3D Features</h2>
+  <h3 class="reveal">Extrude</h3>
+  <p class="reveal">Takes a 2D sketch profile and pulls it into 3D along a straight axis. You can extrude to add material (Join/New Body) or remove material (Cut). You can extrude symmetrically, to a specific distance, or up to another face.</p>
+
+  <h3 class="reveal">Revolve</h3>
+  <p class="reveal">Spins a 2D profile around an axis to create a 3D shape. This is how you make cylinders, cones, vases, rocket nozzle bells — anything rotationally symmetric. Draw half the cross-section profile, select an axis of revolution, done.</p>
+
+  <h3 class="reveal">Fillet & Chamfer</h3>
+  <p class="reveal"><strong>Fillet</strong> rounds an edge with a specified radius. <strong>Chamfer</strong> cuts an edge at a 45° angle by a specified distance. Both reduce stress concentrations and improve aesthetics. Use fillets for organic shapes, chamfers for industrial/aerospace looks.</p>
+
+  <h3 class="reveal">Shell</h3>
+  <p class="reveal">Hollows out a solid body, leaving walls of a specified thickness. Select a face to "open" (remove), and Shell turns a solid block into a box with uniform wall thickness. This is how enclosures and housings are designed.</p>
+
+  <h3 class="reveal">Mirror & Pattern</h3>
+  <p class="reveal"><strong>Mirror</strong> copies features across a symmetry plane — design half your part, mirror it, guaranteed symmetry. <strong>Circular Pattern</strong> copies a feature around an axis (bolt holes on a flange). <strong>Rectangular Pattern</strong> copies features in a grid. These tools save enormous time and ensure consistency.</p>
+
+  <h2 id="export" class="reveal">Exporting for 3D Printing</h2>
+  <div class="step-card reveal" data-step="01">
+    <h4>Check Your Model</h4>
+    <p>Before exporting, verify: all dimensions are correct (use the Measure tool: Inspect → Measure). The model has no impossible geometry (intersecting bodies, zero-thickness walls). Check minimum wall thickness — most FDM printers need at least 1.2mm walls.</p>
+  </div>
+  <div class="step-card reveal" data-step="02">
+    <h4>Export as STL</h4>
+    <p>Right-click the body in the Browser panel → "Save as STL." Keep the default refinement settings (Medium is fine for most parts). Click OK. Save the .STL file somewhere you can find it.</p>
+  </div>
+  <div class="step-card reveal" data-step="03">
+    <h4>Import into Slicer Software</h4>
+    <p>Open your slicer — Cura, PrusaSlicer, or Bambu Studio (all free). Import the STL. Orient the part for best print quality (flat side down, minimal overhangs). Slice with standard settings (0.2mm layer height, 20% infill for decorative parts, 40%+ for functional parts). Export the G-code and send it to your printer.</p>
+  </div>
+
+  <div class="info-box reveal">
+    <div class="info-title">The STL File</div>
+    <p>STL stands for "stereolithography." It converts your smooth mathematical surfaces into a mesh of tiny triangles. More triangles = smoother surface but bigger file. Medium refinement is usually enough — 3D printers can't resolve the difference between medium and high for parts under 200mm anyway.</p>
+  </div>
+
+  <h2 id="project2" class="reveal">Project: Custom Wrench</h2>
+  <p class="reveal">Now that you know the basics, design a wrench that fits a specific bolt head. This teaches precision dimensioning — the wrench must match a real-world measurement exactly.</p>
+
+  <div class="step-card reveal" data-step="01">
+    <h4>Measure Your Bolt</h4>
+    <p>Find any hex bolt in your house. Measure the distance across the flats (the narrow dimension of the hexagon) with calipers or a ruler. Common sizes: M8 bolt = 13mm across flats, M10 = 17mm, M12 = 19mm. Add 0.3mm for clearance (the wrench opening should be slightly larger than the bolt).</p>
+  </div>
+
+  <div class="step-card reveal" data-step="02">
+    <h4>Sketch the Head Opening</h4>
+    <p>Create a sketch. Use the Polygon tool (Create → Polygon) to draw a regular hexagon. Set it to "Circumscribed" and enter the across-flats dimension + clearance. This is your wrench socket.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="03">
+    <h4>Sketch the Handle</h4>
+    <p>Draw a rectangle extending from the hexagon: 120mm long × 25mm wide. Use fillets to round the corners (5mm radius). Connect the handle to the hexagon with tangent arcs for a smooth transition.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="04">
+    <h4>Extrude & Refine</h4>
+    <p>Extrude the entire profile 8mm thick. Add 1mm fillets on all edges. Optionally, use Shell to hollow out the handle for weight reduction (keep 2mm walls). Add text to the handle face using Sketch → Text — type the bolt size ("13mm") and extrude it 0.5mm as a cut to engrave it.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="05">
+    <h4>Print & Test</h4>
+    <p>Export as STL. Print with high infill (80%+) for strength — this is a functional tool, not a display piece. Use PETG if available (stronger than PLA under load). Test on your bolt. If it's too tight, increase the clearance by 0.1mm and reprint. This iteration cycle is exactly how professional product development works.</p>
+  </div>
+
+  <h2 id="next" class="reveal">What's Next</h2>
+  <h3 class="reveal">Build the Other Projects</h3>
+  <p class="reveal">You now have the skills to design parts for every project on Launch Lab. The <a href="p003-bioinspired-robotic-arm.html" style="color:var(--accent)">Robotic Arm (P-003)</a> requires designing vertebrae, base plates, and brackets. The <a href="p005-high-altitude-balloon.html" style="color:var(--accent)">Balloon Payload (P-005)</a> needs a sensor enclosure. Start with what excites you.</p>
+
+  <h3 class="reveal">Learn Assemblies</h3>
+  <p class="reveal">So far you've designed single parts. In real engineering, you design multiple parts and assemble them virtually — checking that they fit, don't interfere, and move correctly. Fusion's Assembly workspace lets you add joints (revolute, slider, rigid) between components. Start by designing a simple box with a hinged lid.</p>
+
+  <h3 class="reveal">Learn Simulation</h3>
+  <p class="reveal">Fusion 360 has a built-in Simulation workspace where you can apply forces and materials to your model and see where it'll break. It's called Finite Element Analysis (FEA). After designing your wrench, simulate: apply 50N of torque to the handle and see the stress distribution. The hex opening corners will light up red — that's the stress concentration. Now you know exactly where to add material.</p>
+
+  <h3 class="reveal">Start a Portfolio</h3>
+  <p class="reveal">Every part you design is a portfolio piece. Screenshot your designs from good angles (use Fusion's Render workspace for photorealistic images). When you apply to engineering programs, internships, or competitions, a portfolio of real CAD work puts you miles ahead of applicants who just list "Fusion 360" as a skill.</p>
+
+  <div class="info-box reveal">
+    <div class="info-title">You're Not "Learning Software." You're Learning to Think.</div>
+    <p>CAD isn't about memorizing menus. It's about learning to think in three dimensions, to decompose complex shapes into simple features, to design with manufacturing constraints in mind, and to iterate rapidly. These are the thinking skills that separate engineers from everyone else — and you just started building them.</p>
+  </div>
+
+</div>
+
+<footer>
+  <p class="footer-main">Launch Lab &middot; Founded by Michael Grimalovsky &middot; Colonia, NJ &middot; 2026</p>
+  <p class="footer-tagline">Talent is equally distributed. Opportunity is not.</p>
+</footer>
+
+</div>
+
+<button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">&uarr;</button>
+
+<script>
+(function(){const c=document.getElementById('starfield'),x=c.getContext('2d');let s=[];function r(){c.width=innerWidth;c.height=innerHeight}function i(){s=[];for(let j=0;j<150;j++)s.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.2+0.3,a:Math.random()*0.5+0.2,sp:Math.random()*0.02+0.005,o:Math.random()*Math.PI*2,b:Math.random()>0.6})}function d(t){x.clearRect(0,0,c.width,c.height);for(const p of s){let a=p.a+Math.sin(t*p.sp+p.o)*0.3;a=Math.max(0,Math.min(1,a));x.fillStyle=p.b?`hsla(210,80%,80%,${a})`:`rgba(255,255,255,${a})`;x.beginPath();x.arc(p.x,p.y,p.r,0,Math.PI*2);x.fill()}requestAnimationFrame(d)}addEventListener('resize',()=>{r();i()});r();i();requestAnimationFrame(d)})();
+(function(){const o=new IntersectionObserver(e=>{e.forEach(el=>{if(el.isIntersecting)el.target.classList.add('visible')})},{threshold:0.1});document.querySelectorAll('.reveal').forEach(el=>o.observe(el))})();
+(function(){const b=document.getElementById('back-to-top');addEventListener('scroll',()=>{b.classList.toggle('show',scrollY>400)})})();
+</script>
+</body>
+</html>

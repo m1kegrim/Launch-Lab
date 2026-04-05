@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>P-005: High-Altitude Balloon Payload — Launch Lab</title>
+<meta name="description" content="Design and launch a sensor payload to the stratosphere. Measure temperature, pressure, and GPS altitude in real time.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #020810; --bg-card: #0a1628; --accent: #00b4ff;
+  --accent-glow: rgba(0,180,255,0.3); --text: #c8d6e5;
+  --text-bright: #edf2f7; --text-muted: #5a6a7a;
+  --border: #122040; --green: #00ff88; --yellow: #ffc107; --red: #ff4444;
+  --font-mono: 'Space Mono', monospace; --font-heading: 'Syne', sans-serif;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--font-mono); font-size: 15px; line-height: 1.7; overflow-x: hidden; }
+canvas#starfield { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+.blueprint-grid { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; background-image: linear-gradient(rgba(0,180,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,180,255,0.03) 1px, transparent 1px); background-size: 60px 60px; }
+.content-wrapper { position: relative; z-index: 2; }
+nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(2,8,16,0.85); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); padding: 0 2rem; height: 64px; display: flex; align-items: center; justify-content: space-between; }
+.nav-logo { font-family: var(--font-heading); font-weight: 800; font-size: 1.25rem; color: var(--text-bright); letter-spacing: 2px; text-decoration: none; }
+.nav-logo span { display: block; font-family: var(--font-mono); font-size: 0.6rem; font-weight: 400; color: var(--text-muted); letter-spacing: 1px; }
+.nav-back { color: var(--accent); text-decoration: none; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; transition: color 0.3s; }
+.nav-back:hover { color: #33c4ff; }
+.guide-header { padding: 120px 2rem 60px; max-width: 900px; margin: 0 auto; }
+.guide-tag { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 3px; color: var(--accent); margin-bottom: 0.5rem; }
+.guide-title { font-family: var(--font-heading); font-size: clamp(2rem,4vw,3rem); font-weight: 800; color: var(--text-bright); line-height: 1.1; margin-bottom: 1rem; }
+.guide-subtitle { font-size: 1rem; color: var(--text); max-width: 640px; margin-bottom: 2rem; }
+.guide-meta { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 2rem; }
+.meta-item { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; padding: 6px 16px; border: 1px solid var(--border); color: var(--text-muted); }
+.meta-item strong { color: var(--text-bright); }
+.badge-intermediate { background: rgba(0,180,255,0.1); color: var(--accent); border-color: rgba(0,180,255,0.2); }
+.guide-body { max-width: 900px; margin: 0 auto; padding: 0 2rem 100px; }
+.guide-body h2 { font-family: var(--font-heading); font-size: 1.6rem; font-weight: 700; color: var(--text-bright); margin: 3rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+.guide-body h3 { font-family: var(--font-heading); font-size: 1.15rem; font-weight: 600; color: var(--accent); margin: 2rem 0 0.75rem; }
+.guide-body p { margin-bottom: 1rem; }
+.guide-body ul, .guide-body ol { margin: 1rem 0 1.5rem 1.5rem; }
+.guide-body li { margin-bottom: 0.5rem; }
+.warning-box { background: rgba(255,68,68,0.08); border: 1px solid rgba(255,68,68,0.3); border-left: 4px solid var(--red); padding: 1.25rem 1.5rem; margin: 1.5rem 0; font-size: 0.9rem; }
+.warning-box .warning-title { color: var(--red); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+.info-box { background: rgba(0,180,255,0.06); border: 1px solid rgba(0,180,255,0.2); border-left: 4px solid var(--accent); padding: 1.25rem 1.5rem; margin: 1.5rem 0; font-size: 0.9rem; }
+.info-box .info-title { color: var(--accent); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+.tip-box { background: rgba(0,255,136,0.06); border: 1px solid rgba(0,255,136,0.2); border-left: 4px solid var(--green); padding: 1.25rem 1.5rem; margin: 1.5rem 0; font-size: 0.9rem; }
+.tip-box .tip-title { color: var(--green); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+.parts-table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.85rem; }
+.parts-table th { text-align: left; padding: 10px 12px; background: var(--bg-card); color: var(--accent); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid var(--border); }
+.parts-table td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); color: var(--text); }
+.parts-table tr:hover td { background: rgba(0,180,255,0.03); }
+.parts-table .cost { color: var(--green); font-weight: 700; }
+.code-block { background: var(--bg-card); border: 1px solid var(--border); padding: 1.5rem; margin: 1.5rem 0; overflow-x: auto; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6; color: var(--text-muted); white-space: pre; }
+.step-card { background: var(--bg-card); border: 1px solid var(--border); padding: 1.5rem 1.5rem 1.5rem 4.5rem; margin: 1rem 0; position: relative; }
+.step-card::before { content: attr(data-step); position: absolute; left: 1.25rem; top: 1.5rem; font-family: var(--font-heading); font-size: 1.2rem; font-weight: 800; color: var(--accent); }
+.step-card h4 { font-family: var(--font-heading); font-size: 1rem; font-weight: 700; color: var(--text-bright); margin-bottom: 0.5rem; }
+.step-card p { margin-bottom: 0.5rem; font-size: 0.9rem; }
+.toc { background: var(--bg-card); border: 1px solid var(--border); padding: 1.5rem 2rem; margin-bottom: 2rem; }
+.toc h3 { font-family: var(--font-heading); font-size: 0.9rem; color: var(--text-bright); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 2px; }
+.toc ol { margin: 0 0 0 1.25rem; }
+.toc li { margin-bottom: 0.3rem; }
+.toc a { color: var(--accent); text-decoration: none; font-size: 0.85rem; transition: color 0.3s; }
+.toc a:hover { color: #33c4ff; }
+footer { border-top: 1px solid var(--border); padding: 3rem 2rem; text-align: center; }
+.footer-main { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; }
+.footer-tagline { font-family: var(--font-heading); font-size: 1rem; font-weight: 600; color: var(--text-bright); }
+.reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+#back-to-top { position: fixed; bottom: 2rem; right: 2rem; z-index: 99; width: 48px; height: 48px; background: var(--accent); color: var(--bg); border: none; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%); opacity: 0; pointer-events: none; transition: opacity 0.3s, background 0.3s; }
+#back-to-top.show { opacity: 1; pointer-events: all; }
+#back-to-top:hover { background: #33c4ff; }
+@media (max-width: 768px) { nav { padding: 0 1rem; } .guide-header { padding: 100px 1rem 40px; } .guide-body { padding: 0 1rem 60px; } .step-card { padding-left: 3.5rem; } .step-card::before { left: 0.75rem; } }
+</style>
+</head>
+<body>
+<canvas id="starfield"></canvas>
+<div class="blueprint-grid"></div>
+<div class="content-wrapper">
+
+<nav>
+  <a href="../index.html" class="nav-logo">LAUNCH LAB <span>Free Engineering for Everyone</span></a>
+  <a href="../index.html#projects" class="nav-back">&larr; All Projects</a>
+</nav>
+
+<div class="guide-header">
+  <div class="guide-tag reveal">P-005 &middot; Project Guide</div>
+  <h1 class="guide-title reveal">High-Altitude Balloon Payload</h1>
+  <p class="guide-subtitle reveal">Design and launch a sensor payload to the stratosphere. Measure temperature, pressure, and GPS altitude in real time. Your data. Your mission. 100,000 feet up.</p>
+  <div class="guide-meta reveal">
+    <span class="meta-item badge-intermediate">Intermediate</span>
+    <span class="meta-item"><strong>~$80</strong> total cost</span>
+    <span class="meta-item"><strong>12–20 hrs</strong> build + launch</span>
+    <span class="meta-item"><strong>Ages 14+</strong></span>
+  </div>
+</div>
+
+<div class="guide-body">
+
+  <div class="toc reveal">
+    <h3>Table of Contents</h3>
+    <ol>
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#regulations">FAA Regulations</a></li>
+      <li><a href="#parts">Parts & Tools</a></li>
+      <li><a href="#atmosphere">The Atmosphere You'll Fly Through</a></li>
+      <li><a href="#payload">Building the Payload</a></li>
+      <li><a href="#code">Flight Computer Code</a></li>
+      <li><a href="#gondola">Gondola Construction</a></li>
+      <li><a href="#launch">Launch Day Procedure</a></li>
+      <li><a href="#recovery">Tracking & Recovery</a></li>
+      <li><a href="#analysis">Data Analysis</a></li>
+      <li><a href="#troubleshooting">Troubleshooting</a></li>
+      <li><a href="#extensions">Going Further</a></li>
+    </ol>
+  </div>
+
+  <h2 id="overview" class="reveal">Overview</h2>
+  <p class="reveal">A high-altitude balloon (HAB) carries a small payload to the edge of space — typically 80,000 to 100,000+ feet (24–30 km). At that altitude, you're above 99% of Earth's atmosphere. The sky is black. The curvature of the Earth is visible. And your sensors are recording data from an environment that most people will never experience.</p>
+  <p class="reveal">The concept is simple: a large latex weather balloon filled with helium lifts a lightweight payload. As it rises, the decreasing atmospheric pressure causes the balloon to expand. Eventually — usually around 90,000–100,000 feet — the balloon bursts. The payload descends under a parachute, and you recover it using GPS tracking.</p>
+  <p class="reveal">This is exactly what Michael's team did at NASA SEES. And you can do it from your backyard (well, a large open field).</p>
+
+  <div class="info-box reveal">
+    <div class="info-title">What You'll Measure</div>
+    <p>Temperature (drops to -60°C in the stratosphere), barometric pressure (drops to near-vacuum), altitude via GPS (watching your payload climb in real time), and optionally: UV intensity, humidity, acceleration, and photographs of the curvature of the Earth.</p>
+  </div>
+
+  <h2 id="regulations" class="reveal">FAA Regulations</h2>
+  <div class="warning-box reveal">
+    <div class="warning-title">Read This Before Anything Else</div>
+    <p>In the United States, unmanned free balloons are regulated by <strong>FAR 101</strong> (Federal Aviation Regulations, Part 101). The good news: small HAB launches are <strong>exempt</strong> from most regulations if you meet certain criteria. But you must understand the rules.</p>
+  </div>
+  <p class="reveal">Your launch is exempt from most FAR 101 requirements if ALL of the following are true:</p>
+  <ul class="reveal">
+    <li>Total payload weight (all packages combined) is under <strong>6 pounds (2.72 kg)</strong>.</li>
+    <li>No individual package weighs more than <strong>4 pounds (1.81 kg)</strong>.</li>
+    <li>The payload package has a weight-to-size ratio of less than <strong>3 oz per square inch</strong> on any surface.</li>
+    <li>You use a <strong>radar reflector</strong> (easy to make from foil) so ATC radar can see you.</li>
+    <li>The rope/line between balloon and payload has a break strength of <strong>50 lbs or less</strong>.</li>
+    <li>You do <strong>NOT</strong> launch within 5 miles of an airport boundary without ATC coordination.</li>
+  </ul>
+
+  <div class="tip-box reveal">
+    <div class="tip-title">Best Practice</div>
+    <p>Even though small payloads are technically exempt, it's courteous and safer to file a NOTAM (Notice to Air Missions) before launch. Call your local Flight Service Station at 1-800-WX-BRIEF. Tell them your launch site coordinates, estimated time, expected max altitude, and estimated landing zone. It takes 5 minutes and pilots will appreciate it.</p>
+  </div>
+
+  <h2 id="parts" class="reveal">Parts & Tools</h2>
+  <table class="parts-table reveal">
+    <thead>
+      <tr><th>Component</th><th>Specification</th><th>Qty</th><th>Cost</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Weather Balloon</td><td>Kaymont HAB-1200 (1200g latex)</td><td>1</td><td class="cost">$25</td></tr>
+      <tr><td>Helium Tank</td><td>~40 cu ft disposable tank (party supply store works)</td><td>1</td><td class="cost">$30</td></tr>
+      <tr><td>Arduino Nano</td><td>Flight computer</td><td>1</td><td class="cost">$5</td></tr>
+      <tr><td>BMP280 Sensor</td><td>Barometric pressure + temperature</td><td>1</td><td class="cost">$3</td></tr>
+      <tr><td>GPS Module</td><td>NEO-6M or NEO-7M with antenna</td><td>1</td><td class="cost">$8</td></tr>
+      <tr><td>Micro SD Card Module</td><td>SPI breakout for data logging</td><td>1</td><td class="cost">$3</td></tr>
+      <tr><td>Micro SD Card</td><td>8GB or larger, class 10</td><td>1</td><td class="cost">$3</td></tr>
+      <tr><td>9V Battery + Holder</td><td>Powers Arduino during flight (or 2x 18650 LiPo)</td><td>1</td><td class="cost">$3</td></tr>
+      <tr><td>Parachute</td><td>18" ripstop nylon (or make from a trash bag)</td><td>1</td><td class="cost">$0</td></tr>
+      <tr><td>Nylon Cord</td><td>50lb braided, 30 meters</td><td>1</td><td class="cost">$4</td></tr>
+      <tr><td>Styrofoam Cooler</td><td>Small — the gondola / insulated housing</td><td>1</td><td class="cost">$3</td></tr>
+      <tr><td>Hand Warmers</td><td>Chemical hand warmers to keep electronics warm</td><td>4</td><td class="cost">$3</td></tr>
+    </tbody>
+    <tfoot>
+      <tr><td colspan="3" style="text-align:right;font-weight:700;color:var(--text-bright);">Estimated Total</td><td class="cost" style="font-size:1rem;">~$90</td></tr>
+    </tfoot>
+  </table>
+
+  <h2 id="atmosphere" class="reveal">The Atmosphere You'll Fly Through</h2>
+  <div class="code-block reveal">ALTITUDE vs. CONDITIONS (approximate):
+
+Altitude (ft)  Temp (°C)   Pressure (hPa)  Notes
+─────────────  ──────────  ──────────────  ─────────────────────
+     0 (sea)   +15°C       1013            Launch
+ 10,000        +0°C         700            Commercial aircraft cabin
+ 20,000        -15°C        465            Unbreathable without O₂
+ 35,000        -50°C        240            Cruising altitude of jets
+ 60,000        -55°C         70            Above 99% of weather
+ 80,000        -40°C         10            Stratosphere — sky darkens
+100,000        -50°C          1            Edge of space. Black sky.
+                                           Earth's curvature visible.
+                                           Balloon bursts here.
+
+DESCENT:
+100,000 → 0    Parachute deploys after burst.
+               Falls rapidly at first (thin air = low drag),
+               slows as atmosphere thickens.
+               Total descent: ~30-45 minutes.
+               Landing zone: typically 30-80 miles from launch
+               (depends on wind).</div>
+
+  <h2 id="payload" class="reveal">Building the Payload</h2>
+  <div class="step-card reveal" data-step="01">
+    <h4>Wire the Flight Computer</h4>
+    <p>Connect the BMP280, GPS module, and SD card module to the Arduino Nano:</p>
+    <div class="code-block">WIRING:
+
+Arduino Nano
+├── 3V3 ──→ BMP280 VCC
+├── GND ──→ BMP280 GND ──→ GPS GND ──→ SD GND
+├── A4  ──→ BMP280 SDA (I2C data)
+├── A5  ──→ BMP280 SCL (I2C clock)
+├── D4  ──→ GPS TX (software serial RX)
+├── D3  ──→ GPS RX (software serial TX)
+├── D10 ──→ SD CS (chip select)
+├── D11 ──→ SD MOSI
+├── D12 ──→ SD MISO
+├── D13 ──→ SD SCK
+├── 5V  ──→ GPS VCC, SD VCC
+└── VIN ──→ 9V battery + (through toggle switch)</div>
+  </div>
+
+  <div class="step-card reveal" data-step="02">
+    <h4>Solder Permanent Connections</h4>
+    <p>This payload will experience vibration, extreme cold, and a hard landing. Breadboard connections WILL shake loose. Solder all connections to a protoboard (perfboard). Use hot glue on the solder joints for strain relief. This is not optional — a loose wire at 80,000 feet means lost data.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="03">
+    <h4>Test on the Ground</h4>
+    <p>Before flight, verify every sensor works. Power up the payload. Check that the SD card is logging data (pull the card and read the file). Take it for a drive — verify the GPS is getting a fix and logging latitude/longitude. Put it in the freezer for an hour — verify the BMP280 still reads at -18°C (that's as cold as a home freezer gets; the real thing will be 3x colder, but this tests basic cold tolerance).</p>
+  </div>
+
+  <h2 id="code" class="reveal">Flight Computer Code</h2>
+  <div class="code-block reveal">// Launch Lab — HAB Flight Computer v1.0
+// Logs: time, lat, lon, altitude, temperature, pressure to SD card
+
+#include &lt;Wire.h&gt;
+#include &lt;SPI.h&gt;
+#include &lt;SD.h&gt;
+#include &lt;Adafruit_BMP280.h&gt;
+#include &lt;SoftwareSerial.h&gt;
+#include &lt;TinyGPS++.h&gt;
+
+const int SD_CS = 10;
+const int GPS_RX = 4, GPS_TX = 3;
+
+Adafruit_BMP280 bmp;
+SoftwareSerial gpsSerial(GPS_RX, GPS_TX);
+TinyGPSPlus gps;
+File logFile;
+
+unsigned long logInterval = 2000;  // Log every 2 seconds
+unsigned long lastLog = 0;
+
+void setup() {
+  Serial.begin(9600);
+  gpsSerial.begin(9600);
+
+  if (!bmp.begin(0x76)) {
+    Serial.println("BMP280 not found!");
+    while (1);
+  }
+
+  if (!SD.begin(SD_CS)) {
+    Serial.println("SD card failed!");
+    while (1);
+  }
+
+  logFile = SD.open("flight.csv", FILE_WRITE);
+  if (logFile) {
+    logFile.println("time_ms,lat,lon,gps_alt_m,bmp_temp_c,bmp_pres_hpa");
+    logFile.flush();
+  }
+
+  pinMode(LED_BUILTIN, OUTPUT);
+  Serial.println("Flight computer ready.");
+}
+
+void loop() {
+  while (gpsSerial.available() > 0) {
+    gps.encode(gpsSerial.read());
+  }
+
+  if (millis() - lastLog >= logInterval) {
+    lastLog = millis();
+    logData();
+  }
+}
+
+void logData() {
+  float temp = bmp.readTemperature();
+  float pres = bmp.readPressure() / 100.0;  // hPa
+
+  double lat = gps.location.isValid() ? gps.location.lat() : 0.0;
+  double lon = gps.location.isValid() ? gps.location.lng() : 0.0;
+  double alt = gps.altitude.isValid() ? gps.altitude.meters() : 0.0;
+
+  String line = String(millis()) + "," +
+                String(lat, 6) + "," +
+                String(lon, 6) + "," +
+                String(alt, 1) + "," +
+                String(temp, 1) + "," +
+                String(pres, 1);
+
+  logFile = SD.open("flight.csv", FILE_WRITE);
+  if (logFile) {
+    logFile.println(line);
+    logFile.flush();
+    logFile.close();
+  }
+
+  // Blink LED to confirm logging
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(50);
+  digitalWrite(LED_BUILTIN, LOW);
+
+  Serial.println(line);
+}</div>
+
+  <div class="tip-box reveal">
+    <div class="tip-title">Library Installation</div>
+    <p>In Arduino IDE, go to Sketch → Include Library → Manage Libraries. Install: "Adafruit BMP280" (by Adafruit), "TinyGPSPlus" (by Mikal Hart), "SD" (built-in). These are the only three external libraries you need.</p>
+  </div>
+
+  <h2 id="gondola" class="reveal">Gondola Construction</h2>
+  <div class="step-card reveal" data-step="01">
+    <h4>Prepare the Styrofoam Cooler</h4>
+    <p>The cooler is your gondola — it insulates the electronics from -55°C stratospheric cold and cushions the landing impact. Trim it to the smallest size that fits your payload. Cut a small hole in the lid for the GPS antenna (it needs a clear view of the sky). Seal all seams with tape.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="02">
+    <h4>Mount Electronics Inside</h4>
+    <p>Use foam cutouts to create a snug cradle for the Arduino board and battery. Nothing should rattle. Place two hand warmers next to the battery (cold kills battery voltage). Place two more near the electronics. The warmers last 8+ hours — more than enough for a 2–3 hour flight.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="03">
+    <h4>Build the Radar Reflector</h4>
+    <p>Cut three squares of cardboard (30cm × 30cm). Wrap each in aluminum foil (shiny side out). Cut slots in each square halfway through the center — one from the top, one from the bottom, one from the side — and interlock them into a 3D cross shape. Attach to the payload cord above the gondola. This reflects ATC radar and makes your payload visible to air traffic control.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="04">
+    <h4>Build or Buy the Parachute</h4>
+    <p>An 18-inch parachute gives a descent rate of roughly 5 m/s for a 500g payload — fast enough to limit drift, slow enough for a soft landing. You can buy a premade ripstop nylon chute, or make one from a trash bag cut into an octagon with 8 string lines. Tie the shroud lines to a central ring, and attach that to the payload cord.</p>
+  </div>
+
+  <div class="code-block reveal">FLIGHT TRAIN (from top to bottom):
+
+    🎈  BALLOON (1200g latex, filled with helium)
+     │
+     │  ← 10m nylon cord
+     │
+    ═══ RADAR REFLECTOR (foil cross)
+     │
+     │  ← 3m cord
+     │
+    ☂️  PARACHUTE (18" — folded during ascent,
+     │              opens after balloon bursts)
+     │
+     │  ← 5m cord
+     │
+    📦 GONDOLA (styrofoam cooler with payload)
+
+Total flight train length: ~18m
+Total payload weight: aim for under 500g (well under FAR 101 limits)</div>
+
+  <h2 id="launch" class="reveal">Launch Day Procedure</h2>
+
+  <div class="step-card reveal" data-step="01">
+    <h4>Pre-Launch (Day Before)</h4>
+    <ul>
+      <li>Check weather forecast. You need: clear skies, winds under 15 mph at surface, no thunderstorms within 100 miles.</li>
+      <li>Run a prediction at <a href="https://predict.habhub.org" style="color:var(--accent)">predict.habhub.org</a> — enter your launch site, balloon type, payload weight, and ascent rate. It shows the predicted flight path and landing zone.</li>
+      <li>Confirm your landing zone isn't a lake, military base, or dense urban area. Shift your launch time if needed.</li>
+      <li>Charge all batteries. Format the SD card. Run a final ground test of all sensors.</li>
+    </ul>
+  </div>
+
+  <div class="step-card reveal" data-step="02">
+    <h4>Launch Site Setup</h4>
+    <p>Find a large open field — football fields, farm fields, or parks work. You need at least 100m clearance in all directions from trees, power lines, and buildings. Lay out the entire flight train on the ground before filling the balloon.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="03">
+    <h4>Fill the Balloon</h4>
+    <p>Attach the balloon's neck to the helium tank nozzle. Fill slowly — the balloon should be roughly 1.5m (5 feet) in diameter at launch (it'll expand to 6+ meters before bursting). You need enough helium to provide positive "free lift" — the balloon must pull upward with enough force to lift the payload PLUS extra (typically aim for 1–2 kg of free lift). Use a kitchen scale: tie the filled balloon to a weight on the scale; the scale should read 1–2 kg less than its weight with balloon detached.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="04">
+    <h4>Final Checks</h4>
+    <ul>
+      <li>Power on the payload. Verify LED blinks (confirms logging).</li>
+      <li>Verify GPS lock (check serial output if you have a laptop handy).</li>
+      <li>Activate hand warmers and seal the gondola.</li>
+      <li>Tie the flight train: balloon → cord → reflector → cord → parachute → cord → gondola.</li>
+      <li>Double-check every knot. Add a cable tie and tape to each one.</li>
+    </ul>
+  </div>
+
+  <div class="step-card reveal" data-step="05">
+    <h4>Launch</h4>
+    <p>Have someone hold the balloon while you walk the flight train out straight downwind. On "3, 2, 1" — release the balloon. It should climb quickly. You'll lose visual sight within 2–5 minutes. Your payload is now on its own.</p>
+    <p>Get in your car and start driving toward the predicted landing zone. The balloon will take 1.5–2.5 hours to reach burst altitude and another 30–45 minutes to descend.</p>
+  </div>
+
+  <h2 id="recovery" class="reveal">Tracking & Recovery</h2>
+  <p class="reveal">Your GPS module logs position data to the SD card — but that only helps AFTER you recover the payload. For real-time tracking during flight, you have options:</p>
+  <ul class="reveal">
+    <li><strong>Budget option:</strong> Use a cheap GPS tracker with cellular connectivity (like a Tile or similar — but these lose signal above cell tower range at ~5,000 ft). They'll re-acquire signal during descent below 5,000 ft, giving you the landing location.</li>
+    <li><strong>Better option:</strong> SPOT Trace satellite tracker (~$50 used, plus monthly subscription). Works everywhere, even at altitude. Sends GPS position every 5 minutes via satellite.</li>
+    <li><strong>DIY option:</strong> Add an APRS (amateur radio) transmitter. Requires a ham radio license (free to get, take a test). Transmits GPS coordinates continuously. This is what serious HAB teams use.</li>
+  </ul>
+
+  <div class="tip-box reveal">
+    <div class="tip-title">Recovery Tips</div>
+    <p>Write your phone number in large letters on the gondola with "HARMLESS SCIENCE PROJECT — PLEASE CALL" in case someone finds it before you do. Bring binoculars for the final approach. The parachute is usually visible from 200+ meters in an open field. Most payloads land within 5 miles of the predicted zone if your wind data was good.</p>
+  </div>
+
+  <h2 id="analysis" class="reveal">Data Analysis</h2>
+  <h3 class="reveal">Your CSV File</h3>
+  <p class="reveal">After recovery, pull the SD card. Open flight.csv. You should have thousands of rows of data: timestamp, latitude, longitude, GPS altitude, temperature, pressure. This is real atmospheric science data.</p>
+
+  <h3 class="reveal">Key Graphs to Plot</h3>
+  <ul class="reveal">
+    <li><strong>Altitude vs. Time:</strong> Shows your ascent rate, burst altitude, and descent profile. Should look like an inverted V.</li>
+    <li><strong>Temperature vs. Altitude:</strong> Shows the troposphere/stratosphere temperature profile. Temperature drops through the troposphere, stabilizes at the tropopause (~36,000 ft), then may rise slightly in the stratosphere due to ozone absorption of UV.</li>
+    <li><strong>Pressure vs. Altitude:</strong> Should follow the barometric formula — an exponential decay. Compare your data to the standard atmosphere model.</li>
+    <li><strong>GPS Track on Map:</strong> Plot lat/lon on Google Maps or Google Earth. See the wind patterns that pushed your payload.</li>
+  </ul>
+
+  <div class="code-block reveal">EXPECTED TEMPERATURE PROFILE:
+
+Temp (°C)
+  +20 ┤───╲
+      │     ╲
+   +0 ┤       ╲  ← Troposphere (temp decreases ~6.5°C/km)
+      │         ╲
+  -20 ┤           ╲
+      │             ╲
+  -40 ┤               ╲
+      │                 ╲_______________  ← Tropopause
+  -60 ┤                                    (temperature stops dropping)
+      │
+  -40 ┤            ╱  ← Stratosphere (temp may increase
+      │          ╱       due to ozone UV absorption)
+      ├──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──
+      0  10  20  30  40  50  60  70  80  90 100
+                                Altitude (×1000 ft)</div>
+
+  <h2 id="troubleshooting" class="reveal">Troubleshooting</h2>
+  <table class="parts-table reveal">
+    <thead>
+      <tr><th>Problem</th><th>Likely Cause</th><th>Fix</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>GPS doesn't get a lock</td><td>Antenna obstructed; cold start delay</td><td>Ensure GPS antenna faces the sky through the gondola hole. Allow 5+ minutes for cold start. Test outside, not indoors.</td></tr>
+      <tr><td>SD card not logging</td><td>Card not formatted; CS pin wrong; card loose</td><td>Format card as FAT32. Verify CS pin matches code. Hot-glue the card into the socket for vibration resistance.</td></tr>
+      <tr><td>Balloon bursts too early</td><td>Over-filled; defective balloon; UV damage</td><td>Fill conservatively. Handle the balloon with cotton gloves (oils weaken latex). Keep out of direct sun before launch.</td></tr>
+      <tr><td>Payload too heavy / won't ascend</td><td>Not enough helium; payload over budget</td><td>Weigh everything. Aim for total payload under 500g. Add more helium until you have 1–2 kg of free lift.</td></tr>
+      <tr><td>Electronics die during flight</td><td>Battery voltage drops in extreme cold</td><td>Use lithium batteries (they perform much better in cold than alkaline). Add more hand warmers. Insulate the battery separately in foam.</td></tr>
+      <tr><td>Can't find the payload</td><td>Tracking failed; landed far from predicted zone</td><td>Always use at least two tracking methods. Write your phone number on the gondola. Check the prediction model with actual launch-time winds.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="extensions" class="reveal">Going Further</h2>
+
+  <h3 class="reveal">Add a Camera</h3>
+  <p class="reveal">A cheap action camera (or old smartphone in airplane mode with camera set to timelapse) records stunning footage. You'll capture the transition from blue sky to black, the curvature of the Earth, and the balloon burst. This footage alone is enough to go viral or anchor a science presentation.</p>
+
+  <h3 class="reveal">Add UV and Humidity Sensors</h3>
+  <p class="reveal">A UV index sensor (VEML6075, ~$4) measures how UV intensity changes with altitude and ozone concentration. A DHT22 humidity sensor (~$3) tracks moisture through the troposphere. More sensors = richer dataset = stronger research project.</p>
+
+  <h3 class="reveal">Fly a Science Experiment</h3>
+  <p class="reveal">Use the balloon as a platform for an actual experiment. Examples: test how cosmic radiation affects film (put a piece of photographic film in the gondola — it'll show particle tracks). Test seed germination after stratospheric exposure. Fly yeast cultures and check if they survive. This is how real atmospheric science missions work — the balloon is just a delivery vehicle.</p>
+
+  <h3 class="reveal">Enter a Competition</h3>
+  <p class="reveal">HAB projects are incredibly competitive entries for science fairs, NASA SEES, and the Conrad Challenge. The visual drama (photos from 100,000 feet), the engineering rigor (sensor calibration, data analysis), and the scale of the project impress every judge. Document everything from day one.</p>
+
+  <div class="info-box reveal">
+    <div class="info-title">You Just Launched a Space Mission</div>
+    <p>Your payload reached the stratosphere — the same region where weather balloons, spy planes (U-2), and scientific sounding rockets operate. The data you collected is real atmospheric science. NASA pays billions for satellite-based atmospheric monitoring. You did a version of it for $80 and a Saturday morning. That's not a metaphor. That's engineering.</p>
+  </div>
+
+</div>
+
+<footer>
+  <p class="footer-main">Launch Lab &middot; Founded by Michael Grimalovsky &middot; Colonia, NJ &middot; 2026</p>
+  <p class="footer-tagline">Talent is equally distributed. Opportunity is not.</p>
+</footer>
+
+</div>
+
+<button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">&uarr;</button>
+
+<script>
+(function(){const c=document.getElementById('starfield'),x=c.getContext('2d');let s=[];function r(){c.width=innerWidth;c.height=innerHeight}function i(){s=[];for(let j=0;j<150;j++)s.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.2+0.3,a:Math.random()*0.5+0.2,sp:Math.random()*0.02+0.005,o:Math.random()*Math.PI*2,b:Math.random()>0.6})}function d(t){x.clearRect(0,0,c.width,c.height);for(const p of s){let a=p.a+Math.sin(t*p.sp+p.o)*0.3;a=Math.max(0,Math.min(1,a));x.fillStyle=p.b?`hsla(210,80%,80%,${a})`:`rgba(255,255,255,${a})`;x.beginPath();x.arc(p.x,p.y,p.r,0,Math.PI*2);x.fill()}requestAnimationFrame(d)}addEventListener('resize',()=>{r();i()});r();i();requestAnimationFrame(d)})();
+(function(){const o=new IntersectionObserver(e=>{e.forEach(el=>{if(el.isIntersecting)el.target.classList.add('visible')})},{threshold:0.1});document.querySelectorAll('.reveal').forEach(el=>o.observe(el))})();
+(function(){const b=document.getElementById('back-to-top');addEventListener('scroll',()=>{b.classList.toggle('show',scrollY>400)})})();
+</script>
+</body>
+</html>
