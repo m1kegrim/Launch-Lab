@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>P-002: Arduino Thrust Logger — Launch Lab</title>
+<meta name="description" content="Build a precision thrust measurement system with Arduino and a load cell. Log, graph, and analyze real propulsion data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #020810; --bg-card: #0a1628; --accent: #00b4ff;
+  --accent-glow: rgba(0,180,255,0.3); --text: #c8d6e5;
+  --text-bright: #edf2f7; --text-muted: #5a6a7a;
+  --border: #122040; --green: #00ff88; --yellow: #ffc107; --red: #ff4444;
+  --font-mono: 'Space Mono', monospace; --font-heading: 'Syne', sans-serif;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--font-mono); font-size: 15px; line-height: 1.7; overflow-x: hidden; }
+canvas#starfield { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+.blueprint-grid { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; background-image: linear-gradient(rgba(0,180,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,180,255,0.03) 1px, transparent 1px); background-size: 60px 60px; }
+.content-wrapper { position: relative; z-index: 2; }
+nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(2,8,16,0.85); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); padding: 0 2rem; height: 64px; display: flex; align-items: center; justify-content: space-between; }
+.nav-logo { font-family: var(--font-heading); font-weight: 800; font-size: 1.25rem; color: var(--text-bright); letter-spacing: 2px; text-decoration: none; }
+.nav-logo span { display: block; font-family: var(--font-mono); font-size: 0.6rem; font-weight: 400; color: var(--text-muted); letter-spacing: 1px; }
+.nav-back { color: var(--accent); text-decoration: none; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; transition: color 0.3s; }
+.nav-back:hover { color: #33c4ff; }
+.guide-header { padding: 120px 2rem 60px; max-width: 900px; margin: 0 auto; }
+.guide-tag { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 3px; color: var(--accent); margin-bottom: 0.5rem; }
+.guide-title { font-family: var(--font-heading); font-size: clamp(2rem,4vw,3rem); font-weight: 800; color: var(--text-bright); line-height: 1.1; margin-bottom: 1rem; }
+.guide-subtitle { font-size: 1rem; color: var(--text); max-width: 640px; margin-bottom: 2rem; }
+.guide-meta { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 2rem; }
+.meta-item { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; padding: 6px 16px; border: 1px solid var(--border); color: var(--text-muted); }
+.meta-item strong { color: var(--text-bright); }
+.badge-intermediate { background: rgba(0,180,255,0.1); color: var(--accent); border-color: rgba(0,180,255,0.2); }
+.guide-body { max-width: 900px; margin: 0 auto; padding: 0 2rem 100px; }
+.guide-body h2 { font-family: var(--font-heading); font-size: 1.6rem; font-weight: 700; color: var(--text-bright); margin: 3rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+.guide-body h3 { font-family: var(--font-heading); font-size: 1.15rem; font-weight: 600; color: var(--accent); margin: 2rem 0 0.75rem; }
+.guide-body p { margin-bottom: 1rem; }
+.guide-body ul, .guide-body ol { margin: 1rem 0 1.5rem 1.5rem; }
+.guide-body li { margin-bottom: 0.5rem; }
+.warning-box { background: rgba(255,68,68,0.08); border: 1px solid rgba(255,68,68,0.3); border-left: 4px solid var(--red); padding: 1.25rem 1.5rem; margin: 1.5rem 0; font-size: 0.9rem; }
+.warning-box .warning-title { color: var(--red); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+.info-box { background: rgba(0,180,255,0.06); border: 1px solid rgba(0,180,255,0.2); border-left: 4px solid var(--accent); padding: 1.25rem 1.5rem; margin: 1.5rem 0; font-size: 0.9rem; }
+.info-box .info-title { color: var(--accent); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+.tip-box { background: rgba(0,255,136,0.06); border: 1px solid rgba(0,255,136,0.2); border-left: 4px solid var(--green); padding: 1.25rem 1.5rem; margin: 1.5rem 0; font-size: 0.9rem; }
+.tip-box .tip-title { color: var(--green); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+.parts-table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.85rem; }
+.parts-table th { text-align: left; padding: 10px 12px; background: var(--bg-card); color: var(--accent); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid var(--border); }
+.parts-table td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); color: var(--text); }
+.parts-table tr:hover td { background: rgba(0,180,255,0.03); }
+.parts-table .cost { color: var(--green); font-weight: 700; }
+.code-block { background: var(--bg-card); border: 1px solid var(--border); padding: 1.5rem; margin: 1.5rem 0; overflow-x: auto; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6; color: var(--text-muted); white-space: pre; }
+.step-card { background: var(--bg-card); border: 1px solid var(--border); padding: 1.5rem 1.5rem 1.5rem 4.5rem; margin: 1rem 0; position: relative; }
+.step-card::before { content: attr(data-step); position: absolute; left: 1.25rem; top: 1.5rem; font-family: var(--font-heading); font-size: 1.2rem; font-weight: 800; color: var(--accent); }
+.step-card h4 { font-family: var(--font-heading); font-size: 1rem; font-weight: 700; color: var(--text-bright); margin-bottom: 0.5rem; }
+.step-card p { margin-bottom: 0.5rem; font-size: 0.9rem; }
+.toc { background: var(--bg-card); border: 1px solid var(--border); padding: 1.5rem 2rem; margin-bottom: 2rem; }
+.toc h3 { font-family: var(--font-heading); font-size: 0.9rem; color: var(--text-bright); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 2px; }
+.toc ol { margin: 0 0 0 1.25rem; }
+.toc li { margin-bottom: 0.3rem; }
+.toc a { color: var(--accent); text-decoration: none; font-size: 0.85rem; transition: color 0.3s; }
+.toc a:hover { color: #33c4ff; }
+footer { border-top: 1px solid var(--border); padding: 3rem 2rem; text-align: center; }
+.footer-main { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; }
+.footer-tagline { font-family: var(--font-heading); font-size: 1rem; font-weight: 600; color: var(--text-bright); }
+.reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+#back-to-top { position: fixed; bottom: 2rem; right: 2rem; z-index: 99; width: 48px; height: 48px; background: var(--accent); color: var(--bg); border: none; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%); opacity: 0; pointer-events: none; transition: opacity 0.3s, background 0.3s; }
+#back-to-top.show { opacity: 1; pointer-events: all; }
+#back-to-top:hover { background: #33c4ff; }
+@media (max-width: 768px) { nav { padding: 0 1rem; } .guide-header { padding: 100px 1rem 40px; } .guide-body { padding: 0 1rem 60px; } .step-card { padding-left: 3.5rem; } .step-card::before { left: 0.75rem; } }
+</style>
+</head>
+<body>
+<canvas id="starfield"></canvas>
+<div class="blueprint-grid"></div>
+<div class="content-wrapper">
+
+<nav>
+  <a href="../index.html" class="nav-logo">LAUNCH LAB <span>Free Engineering for Everyone</span></a>
+  <a href="../index.html#projects" class="nav-back">&larr; All Projects</a>
+</nav>
+
+<div class="guide-header">
+  <div class="guide-tag reveal">P-002 &middot; Project Guide</div>
+  <h1 class="guide-title reveal">Arduino Thrust Logger</h1>
+  <p class="guide-subtitle reveal">Instrument any propulsion experiment with a load cell and Arduino. Learn to log, graph, and analyze real thrust data — the same workflow used in professional rocket test stands.</p>
+  <div class="guide-meta reveal">
+    <span class="meta-item badge-intermediate">Intermediate</span>
+    <span class="meta-item"><strong>~$25</strong> total cost</span>
+    <span class="meta-item"><strong>4–6 hrs</strong> build time</span>
+    <span class="meta-item"><strong>Ages 14+</strong></span>
+  </div>
+</div>
+
+<div class="guide-body">
+
+  <div class="toc reveal">
+    <h3>Table of Contents</h3>
+    <ol>
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#parts">Parts & Tools</a></li>
+      <li><a href="#theory">How Load Cells Work</a></li>
+      <li><a href="#wiring">Wiring the Circuit</a></li>
+      <li><a href="#code">Arduino Code</a></li>
+      <li><a href="#calibration">Calibration</a></li>
+      <li><a href="#testing">Running a Test</a></li>
+      <li><a href="#analysis">Data Analysis</a></li>
+      <li><a href="#troubleshooting">Troubleshooting</a></li>
+      <li><a href="#extensions">Going Further</a></li>
+    </ol>
+  </div>
+
+  <h2 id="overview" class="reveal">Overview</h2>
+  <p class="reveal">Every real propulsion lab — from NASA's Stennis Space Center to SpaceX's test facility in McGregor — has one thing in common: a thrust stand. It measures how much force an engine produces over time. The thrust curve tells you everything: total impulse, specific impulse, burn time, consistency, and efficiency.</p>
+  <p class="reveal">You're going to build the same thing for $25. Your thrust logger uses a strain gauge load cell (the same sensor in your kitchen scale) connected to an Arduino via an HX711 amplifier. It reads force at 10–80 samples per second and logs every reading to your computer over serial. From there, you can graph thrust curves, calculate total impulse, and compare different motors or experiments.</p>
+
+  <div class="info-box reveal">
+    <div class="info-title">Pairs With Everything</div>
+    <p>This logger works with model rocket motors, ionic wind thrusters (P-001), compressed air nozzles, rubber-band launchers — anything that produces a force. Build it once, use it forever.</p>
+  </div>
+
+  <h2 id="parts" class="reveal">Parts & Tools</h2>
+  <table class="parts-table reveal">
+    <thead>
+      <tr><th>Component</th><th>Specification</th><th>Qty</th><th>Cost</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Arduino Uno (or Nano clone)</td><td>ATmega328P, USB-B or micro-USB</td><td>1</td><td class="cost">$5</td></tr>
+      <tr><td>HX711 Load Cell Amplifier</td><td>24-bit ADC, breakout board</td><td>1</td><td class="cost">$2</td></tr>
+      <tr><td>Strain Gauge Load Cell</td><td>1kg or 5kg capacity, bar type</td><td>1</td><td class="cost">$4</td></tr>
+      <tr><td>USB Cable</td><td>For Arduino to computer</td><td>1</td><td class="cost">$2</td></tr>
+      <tr><td>Breadboard</td><td>Half-size (400 tie points)</td><td>1</td><td class="cost">$3</td></tr>
+      <tr><td>Jumper Wires</td><td>Male-to-male and male-to-female</td><td>10+</td><td class="cost">$3</td></tr>
+      <tr><td>Mounting Hardware</td><td>Small wood/acrylic base, screws, nuts</td><td>—</td><td class="cost">$4</td></tr>
+      <tr><td>Known Calibration Weight</td><td>Coins work — a US nickel weighs 5.00g</td><td>1+</td><td class="cost">$0</td></tr>
+    </tbody>
+    <tfoot>
+      <tr><td colspan="3" style="text-align:right;font-weight:700;color:var(--text-bright);">Estimated Total</td><td class="cost" style="font-size:1rem;">~$23</td></tr>
+    </tfoot>
+  </table>
+
+  <h3 class="reveal">Software (All Free)</h3>
+  <ul class="reveal">
+    <li><strong>Arduino IDE</strong> — <a href="https://www.arduino.cc/en/software" style="color:var(--accent)">arduino.cc/en/software</a></li>
+    <li><strong>HX711 Library</strong> — by bogde (install via Arduino Library Manager)</li>
+    <li><strong>Python 3 + matplotlib</strong> — for graphing (optional, can use spreadsheet)</li>
+    <li><strong>CoolTerm or PuTTY</strong> — serial terminal for data capture (optional)</li>
+  </ul>
+
+  <h2 id="theory" class="reveal">How Load Cells Work</h2>
+  <p class="reveal">A load cell is a metal bar with tiny strain gauges bonded to its surface. When force is applied, the bar bends microscopically. The strain gauges (thin resistive foils) stretch with it, changing their resistance. Four gauges are wired in a Wheatstone bridge configuration — an elegant circuit that converts tiny resistance changes into a measurable voltage difference.</p>
+  <p class="reveal">The problem: that voltage difference is incredibly small — microvolts. Your Arduino's built-in ADC (10-bit, 0–5V range) can't read it. That's where the HX711 comes in. It's a 24-bit analog-to-digital converter specifically designed for load cells. It amplifies the signal by 128x and digitizes it with 24-bit resolution — that's over 16 million discrete levels compared to your Arduino's 1,024.</p>
+
+  <div class="code-block reveal">WHEATSTONE BRIDGE (inside the load cell):
+
+        +V (Excitation)
+         │
+     ┌───┤───┐
+     │  R1    R2   ← Strain gauges
+     │   │    │
+     ├───A    B───┤  ← Measure voltage A-B
+     │   │    │       (changes with force)
+     │  R3    R4
+     │   │    │
+     └───┴────┘
+         │
+        GND
+
+When the bar bends:
+  R1 and R4 increase (tension side)
+  R2 and R3 decrease (compression side)
+  → Voltage between A and B changes proportionally to force</div>
+
+  <h2 id="wiring" class="reveal">Wiring the Circuit</h2>
+  <div class="step-card reveal" data-step="01">
+    <h4>Connect Load Cell to HX711</h4>
+    <p>Your load cell has 4 wires (colors may vary — check your datasheet):</p>
+    <ul>
+      <li><strong>Red</strong> → HX711 E+ (Excitation+)</li>
+      <li><strong>Black</strong> → HX711 E- (Excitation-)</li>
+      <li><strong>White</strong> → HX711 A- (Signal-)</li>
+      <li><strong>Green</strong> → HX711 A+ (Signal+)</li>
+    </ul>
+  </div>
+
+  <div class="step-card reveal" data-step="02">
+    <h4>Connect HX711 to Arduino</h4>
+    <p>Only 4 wires needed:</p>
+    <ul>
+      <li><strong>VCC</strong> → Arduino 5V</li>
+      <li><strong>GND</strong> → Arduino GND</li>
+      <li><strong>DT (Data)</strong> → Arduino Pin 3</li>
+      <li><strong>SCK (Clock)</strong> → Arduino Pin 2</li>
+    </ul>
+  </div>
+
+  <div class="code-block reveal">COMPLETE WIRING DIAGRAM:
+
+   LOAD CELL                    HX711 BOARD                ARDUINO UNO
+  ┌──────────┐               ┌──────────────┐            ┌───────────┐
+  │ Red  ────┼──────────────→│ E+           │            │           │
+  │ Black ───┼──────────────→│ E-           │            │           │
+  │ White ───┼──────────────→│ A-       VCC │←───────────┤ 5V        │
+  │ Green ───┼──────────────→│ A+       GND │←───────────┤ GND       │
+  └──────────┘               │          DT  │←───────────┤ Pin 3     │
+                             │          SCK │←───────────┤ Pin 2     │
+                             └──────────────┘            └───────────┘
+
+  Total connections: 8 wires. That's it.</div>
+
+  <div class="tip-box reveal">
+    <div class="tip-title">Wire Color Warning</div>
+    <p>Load cell wire colors are NOT standardized across all manufacturers. If your readings are erratic or always zero, you may have the signal wires swapped. Try swapping white and green. If that doesn't work, try swapping red and black. A wrong excitation polarity won't damage anything — it just inverts the reading.</p>
+  </div>
+
+  <h2 id="code" class="reveal">Arduino Code</h2>
+  <p class="reveal">Install the HX711 library: in Arduino IDE, go to Sketch → Include Library → Manage Libraries → search "HX711" → install the one by "bogde".</p>
+
+  <div class="code-block reveal">// Launch Lab — Thrust Logger v1.0
+// Reads load cell via HX711 at ~10 Hz, outputs CSV over serial
+
+#include "HX711.h"
+
+const int DT_PIN = 3;
+const int SCK_PIN = 2;
+
+HX711 scale;
+
+// Calibration factor — you'll determine this in the calibration step.
+// Start with 1.0, then adjust based on known weight test.
+float calibration_factor = -7050.0;
+
+void setup() {
+  Serial.begin(9600);
+  Serial.println("time_ms,force_g");   // CSV header
+
+  scale.begin(DT_PIN, SCK_PIN);
+  scale.set_scale(calibration_factor);
+  scale.tare();                         // Zero the scale
+
+  // Blink LED to signal ready
+  pinMode(LED_BUILTIN, OUTPUT);
+  for (int i = 0; i < 3; i++) {
+    digitalWrite(LED_BUILTIN, HIGH); delay(200);
+    digitalWrite(LED_BUILTIN, LOW);  delay(200);
+  }
+}
+
+void loop() {
+  if (scale.is_ready()) {
+    float force = scale.get_units(1);   // Single reading, no averaging
+    unsigned long t = millis();
+
+    Serial.print(t);
+    Serial.print(",");
+    Serial.println(force, 2);           // 2 decimal places
+  }
+  delay(100);   // ~10 Hz sample rate. Use delay(50) for ~20 Hz
+}</div>
+
+  <h2 id="calibration" class="reveal">Calibration</h2>
+  <p class="reveal">Calibration converts raw HX711 readings into real-world grams. Without it, your numbers are meaningless.</p>
+
+  <div class="step-card reveal" data-step="01">
+    <h4>Mount the Load Cell</h4>
+    <p>Screw one end of the bar load cell to a rigid base (wood block, acrylic plate). The other end should be free to deflect. The arrow on the load cell (if present) indicates the direction of applied force.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="02">
+    <h4>Tare (Zero) the Scale</h4>
+    <p>Upload the code above. Open Serial Monitor at 9600 baud. With nothing on the load cell, you should see readings near 0.00. If not, the tare in setup() should handle it. Press the Arduino reset button to re-tare.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="03">
+    <h4>Apply Known Weight</h4>
+    <p>Place a known weight on the free end of the load cell. US coins are surprisingly precise calibration weights:</p>
+    <ul>
+      <li>Nickel = 5.000g</li>
+      <li>Quarter = 5.670g</li>
+      <li>10 nickels stacked = 50.00g</li>
+    </ul>
+    <p>Read the value on Serial Monitor. If 50g reads as "35.72", your calibration factor needs adjusting.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="04">
+    <h4>Adjust Calibration Factor</h4>
+    <p>Use this formula:</p>
+    <div class="code-block">new_factor = old_factor × (displayed_value / actual_weight)
+
+Example:
+  Old factor: -7050.0
+  Displayed:  35.72g
+  Actual:     50.00g
+  
+  new_factor = -7050.0 × (35.72 / 50.00) = -5034.6
+
+Update calibration_factor in the code, re-upload, and test again.
+Repeat until your known weight reads within ±0.1g.</div>
+  </div>
+
+  <h2 id="testing" class="reveal">Running a Test</h2>
+  <div class="step-card reveal" data-step="01">
+    <h4>Set Up Data Capture</h4>
+    <p>You need to save the serial output to a file. Three options:</p>
+    <ul>
+      <li><strong>Arduino Serial Monitor:</strong> Copy-paste the output after the test (works for short tests).</li>
+      <li><strong>CoolTerm:</strong> Free serial terminal. Set "Connection → Capture to Text File" before starting.</li>
+      <li><strong>Python script:</strong> Use pyserial to read and save automatically (see Going Further).</li>
+    </ul>
+  </div>
+
+  <div class="step-card reveal" data-step="02">
+    <h4>Prepare the Experiment</h4>
+    <p>Mount whatever you're testing so its thrust pushes directly on the load cell's free end. The force direction must align with the load cell's measurement axis. For model rocket motors, build a simple bracket that holds the motor with the nozzle pointed away from the load cell.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="03">
+    <h4>Record Data</h4>
+    <p>Start your serial capture. Wait 2–3 seconds for baseline (should read ~0). Ignite/activate your experiment. Let it run to completion. Wait another 2–3 seconds of baseline after thrust ends. Stop capture.</p>
+    <p>You now have a CSV file with columns: time_ms, force_g</p>
+  </div>
+
+  <h2 id="analysis" class="reveal">Data Analysis</h2>
+  <h3 class="reveal">Quick Spreadsheet Analysis</h3>
+  <p class="reveal">Open your CSV in Google Sheets or Excel. Create an XY scatter chart: X axis = time (ms), Y axis = force (g). You just plotted a thrust curve. Key measurements:</p>
+  <ul class="reveal">
+    <li><strong>Peak thrust:</strong> The maximum force reading.</li>
+    <li><strong>Average thrust:</strong> Mean of all readings during the burn.</li>
+    <li><strong>Burn time:</strong> Duration where force > baseline noise.</li>
+    <li><strong>Total impulse:</strong> Area under the thrust curve (integrate using trapezoidal rule in your spreadsheet).</li>
+  </ul>
+
+  <h3 class="reveal">Python Graphing (Optional)</h3>
+  <div class="code-block reveal">import csv
+import matplotlib.pyplot as plt
+
+time_ms = []
+force_g = []
+
+with open('thrust_data.csv', 'r') as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        time_ms.append(float(row['time_ms']))
+        force_g.append(float(row['force_g']))
+
+# Convert ms to seconds
+time_s = [t / 1000.0 for t in time_ms]
+
+plt.figure(figsize=(10, 5))
+plt.plot(time_s, force_g, color='#00b4ff', linewidth=1.5)
+plt.fill_between(time_s, force_g, alpha=0.15, color='#00b4ff')
+plt.xlabel('Time (s)')
+plt.ylabel('Force (g)')
+plt.title('Thrust Curve')
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.savefig('thrust_curve.png', dpi=150)
+plt.show()</div>
+
+  <div class="code-block reveal">WHAT A THRUST CURVE LOOKS LIKE:
+
+Force (g)
+    │
+ 25 ┤         ┌──────┐
+    │        ╱        ╲
+ 20 ┤       ╱          ╲
+    │      ╱            ╲
+ 15 ┤     ╱              ╲
+    │    ╱                ╲
+ 10 ┤   ╱                  ╲
+    │  ╱                    ╲
+  5 ┤ ╱                      ╲
+    │╱                        ╲___________
+  0 ┤─────┬──┬──┬──┬──┬──┬──┬──┬──┬──┬───
+    0    0.5  1.0  1.5  2.0  2.5  3.0  3.5  Time (s)
+    
+    ←baseline→←───── burn ─────→←baseline→
+    
+Peak thrust: 24.3g    Burn time: 2.1s
+Total impulse: area under curve ≈ 0.38 N·s</div>
+
+  <h2 id="troubleshooting" class="reveal">Troubleshooting</h2>
+  <table class="parts-table reveal">
+    <thead>
+      <tr><th>Problem</th><th>Likely Cause</th><th>Fix</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Readings stuck at 0</td><td>DT/SCK pins swapped, or load cell wires wrong</td><td>Double-check wiring. Try swapping DT and SCK. Try swapping white/green load cell wires.</td></tr>
+      <tr><td>Readings fluctuate wildly (±5g)</td><td>Loose connections; electrical noise</td><td>Secure all connections. Use shorter wires. Keep load cell wires away from motors/power lines. Add 0.1µF capacitor across VCC-GND on HX711.</td></tr>
+      <tr><td>Readings drift over time</td><td>Temperature change; load cell creep</td><td>Let the system warm up 5 min before testing. Re-tare (press reset) right before each test run.</td></tr>
+      <tr><td>Serial Monitor shows garbage</td><td>Wrong baud rate</td><td>Set Serial Monitor to 9600 baud (must match Serial.begin in code).</td></tr>
+      <tr><td>Values are negative</td><td>Force applied in wrong direction; wires swapped</td><td>Flip the load cell, or swap the signal wires (green/white), or negate the calibration factor (change sign).</td></tr>
+      <tr><td>Very slow reading (once per 2+ seconds)</td><td>HX711 in 10Hz mode (default is 10 SPS)</td><td>Some HX711 boards have a RATE pin. Connect it to VCC for 80 SPS. Check your board documentation.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="extensions" class="reveal">Going Further</h2>
+
+  <h3 class="reveal">Increase Sample Rate to 80 Hz</h3>
+  <p class="reveal">The HX711 has a RATE pin. By default (pin floating or grounded) it samples at 10 Hz. Connect the RATE pin to VCC (5V) and it jumps to 80 Hz. Change your delay(100) to delay(12) in the code. This gives you much smoother thrust curves and catches fast transients.</p>
+
+  <h3 class="reveal">SD Card Logging</h3>
+  <p class="reveal">Add a micro-SD card module (~$3) to log data directly to a file — no computer tether needed. Useful for field tests like model rocket launches. Use the Arduino SD library.</p>
+
+  <h3 class="reveal">Real-Time Serial Plotter</h3>
+  <p class="reveal">Arduino IDE has a built-in Serial Plotter (Tools → Serial Plotter). Just output one number per line (remove the CSV header and timestamp) and you get a live graph. Great for real-time visualization during tuning.</p>
+
+  <h3 class="reveal">Multi-Axis Measurement</h3>
+  <p class="reveal">Add a second load cell perpendicular to the first to measure lateral forces. This is how real test stands check for thrust vectoring asymmetry. You'll need a second HX711 board.</p>
+
+  <h3 class="reveal">Compare Commercial Rocket Motors</h3>
+  <p class="reveal">Buy a few different Estes model rocket motors (A, B, C class). Measure their thrust curves with your logger. Compare your data to the manufacturer's published curves. If they match — your instrument is validated. If they don't — figure out why. That's engineering.</p>
+
+  <div class="info-box reveal">
+    <div class="info-title">You Built a Professional Instrument</div>
+    <p>A commercial thrust test stand from a lab supplier costs $500–$2,000. Yours cost $25 and does the same fundamental job: converting mechanical force into time-series data. The skills you just learned — instrumentation, calibration, signal conditioning, data analysis — are the core of experimental engineering at every level.</p>
+  </div>
+
+</div>
+
+<footer>
+  <p class="footer-main">Launch Lab &middot; Founded by Michael Grimalovsky &middot; Colonia, NJ &middot; 2026</p>
+  <p class="footer-tagline">Talent is equally distributed. Opportunity is not.</p>
+</footer>
+
+</div>
+
+<button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">&uarr;</button>
+
+<script>
+(function(){const c=document.getElementById('starfield'),x=c.getContext('2d');let s=[];function r(){c.width=innerWidth;c.height=innerHeight}function i(){s=[];for(let j=0;j<150;j++)s.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.2+0.3,a:Math.random()*0.5+0.2,sp:Math.random()*0.02+0.005,o:Math.random()*Math.PI*2,b:Math.random()>0.6})}function d(t){x.clearRect(0,0,c.width,c.height);for(const p of s){let a=p.a+Math.sin(t*p.sp+p.o)*0.3;a=Math.max(0,Math.min(1,a));x.fillStyle=p.b?`hsla(210,80%,80%,${a})`:`rgba(255,255,255,${a})`;x.beginPath();x.arc(p.x,p.y,p.r,0,Math.PI*2);x.fill()}requestAnimationFrame(d)}addEventListener('resize',()=>{r();i()});r();i();requestAnimationFrame(d)})();
+(function(){const o=new IntersectionObserver(e=>{e.forEach(el=>{if(el.isIntersecting)el.target.classList.add('visible')})},{threshold:0.1});document.querySelectorAll('.reveal').forEach(el=>o.observe(el))})();
+(function(){const b=document.getElementById('back-to-top');addEventListener('scroll',()=>{b.classList.toggle('show',scrollY>400)})})();
+</script>
+</body>
+</html>

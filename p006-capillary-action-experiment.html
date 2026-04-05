@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>P-006: Capillary Action Experiment — Launch Lab</title>
+<meta name="description" content="Study fluid behavior in simulated microgravity. A version of this experiment is flying on a NASA zero-g flight in May 2026.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #020810; --bg-card: #0a1628; --accent: #00b4ff;
+  --accent-glow: rgba(0,180,255,0.3); --text: #c8d6e5;
+  --text-bright: #edf2f7; --text-muted: #5a6a7a;
+  --border: #122040; --green: #00ff88; --yellow: #ffc107; --red: #ff4444;
+  --font-mono: 'Space Mono', monospace; --font-heading: 'Syne', sans-serif;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--font-mono); font-size: 15px; line-height: 1.7; overflow-x: hidden; }
+canvas#starfield { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+.blueprint-grid { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; background-image: linear-gradient(rgba(0,180,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,180,255,0.03) 1px, transparent 1px); background-size: 60px 60px; }
+.content-wrapper { position: relative; z-index: 2; }
+nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(2,8,16,0.85); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); padding: 0 2rem; height: 64px; display: flex; align-items: center; justify-content: space-between; }
+.nav-logo { font-family: var(--font-heading); font-weight: 800; font-size: 1.25rem; color: var(--text-bright); letter-spacing: 2px; text-decoration: none; }
+.nav-logo span { display: block; font-family: var(--font-mono); font-size: 0.6rem; font-weight: 400; color: var(--text-muted); letter-spacing: 1px; }
+.nav-back { color: var(--accent); text-decoration: none; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; transition: color 0.3s; }
+.nav-back:hover { color: #33c4ff; }
+.guide-header { padding: 120px 2rem 60px; max-width: 900px; margin: 0 auto; }
+.guide-tag { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 3px; color: var(--accent); margin-bottom: 0.5rem; }
+.guide-title { font-family: var(--font-heading); font-size: clamp(2rem,4vw,3rem); font-weight: 800; color: var(--text-bright); line-height: 1.1; margin-bottom: 1rem; }
+.guide-subtitle { font-size: 1rem; color: var(--text); max-width: 640px; margin-bottom: 2rem; }
+.guide-meta { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 2rem; }
+.meta-item { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; padding: 6px 16px; border: 1px solid var(--border); color: var(--text-muted); }
+.meta-item strong { color: var(--text-bright); }
+.badge-beginner { background: rgba(0,255,136,0.1); color: var(--green); border-color: rgba(0,255,136,0.2); }
+.guide-body { max-width: 900px; margin: 0 auto; padding: 0 2rem 100px; }
+.guide-body h2 { font-family: var(--font-heading); font-size: 1.6rem; font-weight: 700; color: var(--text-bright); margin: 3rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+.guide-body h3 { font-family: var(--font-heading); font-size: 1.15rem; font-weight: 600; color: var(--accent); margin: 2rem 0 0.75rem; }
+.guide-body p { margin-bottom: 1rem; }
+.guide-body ul, .guide-body ol { margin: 1rem 0 1.5rem 1.5rem; }
+.guide-body li { margin-bottom: 0.5rem; }
+.warning-box { background: rgba(255,68,68,0.08); border: 1px solid rgba(255,68,68,0.3); border-left: 4px solid var(--red); padding: 1.25rem 1.5rem; margin: 1.5rem 0; font-size: 0.9rem; }
+.warning-box .warning-title { color: var(--red); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+.info-box { background: rgba(0,180,255,0.06); border: 1px solid rgba(0,180,255,0.2); border-left: 4px solid var(--accent); padding: 1.25rem 1.5rem; margin: 1.5rem 0; font-size: 0.9rem; }
+.info-box .info-title { color: var(--accent); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+.tip-box { background: rgba(0,255,136,0.06); border: 1px solid rgba(0,255,136,0.2); border-left: 4px solid var(--green); padding: 1.25rem 1.5rem; margin: 1.5rem 0; font-size: 0.9rem; }
+.tip-box .tip-title { color: var(--green); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+.parts-table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.85rem; }
+.parts-table th { text-align: left; padding: 10px 12px; background: var(--bg-card); color: var(--accent); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid var(--border); }
+.parts-table td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); color: var(--text); }
+.parts-table tr:hover td { background: rgba(0,180,255,0.03); }
+.parts-table .cost { color: var(--green); font-weight: 700; }
+.code-block { background: var(--bg-card); border: 1px solid var(--border); padding: 1.5rem; margin: 1.5rem 0; overflow-x: auto; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6; color: var(--text-muted); white-space: pre; }
+.step-card { background: var(--bg-card); border: 1px solid var(--border); padding: 1.5rem 1.5rem 1.5rem 4.5rem; margin: 1rem 0; position: relative; }
+.step-card::before { content: attr(data-step); position: absolute; left: 1.25rem; top: 1.5rem; font-family: var(--font-heading); font-size: 1.2rem; font-weight: 800; color: var(--accent); }
+.step-card h4 { font-family: var(--font-heading); font-size: 1rem; font-weight: 700; color: var(--text-bright); margin-bottom: 0.5rem; }
+.step-card p { margin-bottom: 0.5rem; font-size: 0.9rem; }
+.toc { background: var(--bg-card); border: 1px solid var(--border); padding: 1.5rem 2rem; margin-bottom: 2rem; }
+.toc h3 { font-family: var(--font-heading); font-size: 0.9rem; color: var(--text-bright); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 2px; }
+.toc ol { margin: 0 0 0 1.25rem; }
+.toc li { margin-bottom: 0.3rem; }
+.toc a { color: var(--accent); text-decoration: none; font-size: 0.85rem; transition: color 0.3s; }
+.toc a:hover { color: #33c4ff; }
+footer { border-top: 1px solid var(--border); padding: 3rem 2rem; text-align: center; }
+.footer-main { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; }
+.footer-tagline { font-family: var(--font-heading); font-size: 1rem; font-weight: 600; color: var(--text-bright); }
+.reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+#back-to-top { position: fixed; bottom: 2rem; right: 2rem; z-index: 99; width: 48px; height: 48px; background: var(--accent); color: var(--bg); border: none; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%); opacity: 0; pointer-events: none; transition: opacity 0.3s, background 0.3s; }
+#back-to-top.show { opacity: 1; pointer-events: all; }
+#back-to-top:hover { background: #33c4ff; }
+@media (max-width: 768px) { nav { padding: 0 1rem; } .guide-header { padding: 100px 1rem 40px; } .guide-body { padding: 0 1rem 60px; } .step-card { padding-left: 3.5rem; } .step-card::before { left: 0.75rem; } }
+</style>
+</head>
+<body>
+<canvas id="starfield"></canvas>
+<div class="blueprint-grid"></div>
+<div class="content-wrapper">
+
+<nav>
+  <a href="../index.html" class="nav-logo">LAUNCH LAB <span>Free Engineering for Everyone</span></a>
+  <a href="../index.html#projects" class="nav-back">&larr; All Projects</a>
+</nav>
+
+<div class="guide-header">
+  <div class="guide-tag reveal">P-006 &middot; Project Guide</div>
+  <h1 class="guide-title reveal">Capillary Action Experiment</h1>
+  <p class="guide-subtitle reveal">Study fluid behavior in simulated microgravity. A version of this experiment is flying on a NASA zero-gravity parabolic flight in May 2026. You can build the ground-based version today.</p>
+  <div class="guide-meta reveal">
+    <span class="meta-item badge-beginner">Beginner</span>
+    <span class="meta-item"><strong>~$15</strong> total cost</span>
+    <span class="meta-item"><strong>2–3 hrs</strong> build time</span>
+    <span class="meta-item"><strong>Ages 12+</strong></span>
+  </div>
+</div>
+
+<div class="guide-body">
+
+  <div class="toc reveal">
+    <h3>Table of Contents</h3>
+    <ol>
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#theory">The Physics of Capillary Action</a></li>
+      <li><a href="#space">Why NASA Cares</a></li>
+      <li><a href="#parts">Parts & Tools</a></li>
+      <li><a href="#experiment1">Experiment 1: Capillary Rise</a></li>
+      <li><a href="#experiment2">Experiment 2: Contact Angle</a></li>
+      <li><a href="#experiment3">Experiment 3: Simulated Microgravity</a></li>
+      <li><a href="#data">Data Collection & Analysis</a></li>
+      <li><a href="#zerog">The Zero-G Connection</a></li>
+      <li><a href="#troubleshooting">Troubleshooting</a></li>
+      <li><a href="#extensions">Going Further</a></li>
+    </ol>
+  </div>
+
+  <h2 id="overview" class="reveal">Overview</h2>
+  <p class="reveal">Put a thin glass tube in water. The water climbs up the tube — on its own, against gravity. That's capillary action. It seems like a simple science-class demo, but it's one of the most important phenomena in space engineering. On the International Space Station, where gravity is effectively zero, capillary forces are the dominant force controlling how fluids move. Understanding capillary action is critical to designing fuel tanks, life support water systems, cooling loops, and plant-growing systems in space.</p>
+  <p class="reveal">In May 2026, a version of this experiment designed by Michael Grimalovsky is flying on a NASA parabolic flight — testing how capillary-driven fluid flow changes in actual microgravity. You're going to build the ground-based version of the same experiment and collect real data you can compare to the zero-g results.</p>
+
+  <div class="info-box reveal">
+    <div class="info-title">This is Real NASA Research</div>
+    <p>NASA's Capillary Flow Experiment (CFE) ran on the ISS from 2010–2015, studying exactly this phenomenon. The challenge: in zero-g, fluids don't settle to the bottom of a tank. They cling to walls, form floating blobs, and move in unexpected ways. Engineers need accurate models of this behavior to design reliable spacecraft fluid systems. Your experiment investigates the same fundamental physics.</p>
+  </div>
+
+  <h2 id="theory" class="reveal">The Physics of Capillary Action</h2>
+  <h3 class="reveal">Surface Tension</h3>
+  <p class="reveal">Water molecules attract each other (cohesion). At the surface, molecules have no neighbors above them — so they're pulled inward and sideways more strongly than outward. This creates a "skin" on the water surface that resists being stretched. That's surface tension. It's measured in milliNewtons per meter (mN/m). Water at room temperature: ~72 mN/m.</p>
+
+  <h3 class="reveal">Adhesion vs. Cohesion</h3>
+  <p class="reveal">Cohesion is water attracting water. Adhesion is water attracting the tube wall (glass, in our case). When adhesion is stronger than cohesion — which it is for water on glass — the water "wets" the glass and climbs up the wall, pulling the bulk liquid along with it. When cohesion is stronger (like mercury on glass), the liquid depresses instead of climbing.</p>
+
+  <h3 class="reveal">The Jurin Height Equation</h3>
+  <p class="reveal">The height that a liquid climbs in a capillary tube is given by:</p>
+  <div class="code-block reveal">h = (2γ cos θ) / (ρgr)
+
+Where:
+  h = capillary rise height (meters)
+  γ = surface tension (N/m) — water ≈ 0.072 N/m
+  θ = contact angle (degrees) — water on glass ≈ 20°
+  ρ = liquid density (kg/m³) — water = 1000
+  g = gravitational acceleration (m/s²) — 9.81
+  r = tube inner radius (meters)
+
+Example: glass tube with 0.5mm inner radius
+  h = (2 × 0.072 × cos(20°)) / (1000 × 9.81 × 0.0005)
+  h = 0.1354 / 4.905
+  h = 0.0276 m ≈ 27.6 mm
+
+Key insight: h is inversely proportional to r.
+  Thinner tube → higher rise.
+  In zero gravity (g → 0), h → infinity.
+  That's why fluids behave so differently in space.</div>
+
+  <h2 id="space" class="reveal">Why NASA Cares</h2>
+  <p class="reveal">In microgravity, the g term in the Jurin equation effectively drops to zero. This means capillary forces — which are negligible at Earth gravity for large containers — become the dominant force governing fluid position and flow. This creates problems:</p>
+  <ul class="reveal">
+    <li><strong>Fuel management:</strong> In a spacecraft fuel tank, propellant doesn't settle to the bottom. It can float anywhere, potentially uncovering the fuel intake. NASA uses "propellant management devices" (PMDs) — vanes and screens that use capillary action to guide fuel to the intake.</li>
+    <li><strong>Life support:</strong> Water recycling systems on the ISS must move water through filters and membranes without gravity. Capillary action drives much of this flow.</li>
+    <li><strong>Thermal control:</strong> Heat pipes in spacecraft use capillary wicking to circulate coolant — no pump needed.</li>
+    <li><strong>Plant growth:</strong> Watering plants in space is surprisingly hard. Water doesn't drain "down" to roots. NASA's Veggie experiment uses capillary mats to wick water to plant roots.</li>
+  </ul>
+
+  <h2 id="parts" class="reveal">Parts & Tools</h2>
+  <table class="parts-table reveal">
+    <thead>
+      <tr><th>Component</th><th>Specification</th><th>Qty</th><th>Cost</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Glass Capillary Tubes</td><td>Variety pack: 0.5mm, 1mm, 1.5mm, 2mm inner diameter</td><td>1 pack</td><td class="cost">$5</td></tr>
+      <tr><td>Shallow Glass Dish</td><td>Petri dish or glass baking dish</td><td>1</td><td class="cost">$2</td></tr>
+      <tr><td>Ruler with mm markings</td><td>Clear plastic ruler (for measurement through tube)</td><td>1</td><td class="cost">$1</td></tr>
+      <tr><td>Food Coloring</td><td>For making meniscus visible</td><td>1 set</td><td class="cost">$2</td></tr>
+      <tr><td>Rubbing Alcohol</td><td>Isopropyl 70% (different surface tension than water)</td><td>1 bottle</td><td class="cost">$2</td></tr>
+      <tr><td>Dish Soap</td><td>Any brand (surfactant to modify surface tension)</td><td>1</td><td class="cost">$0</td></tr>
+      <tr><td>Smartphone</td><td>For photos and slow-motion video</td><td>1</td><td class="cost">$0</td></tr>
+      <tr><td>Cardboard + Tape</td><td>For building a measurement jig</td><td>—</td><td class="cost">$1</td></tr>
+      <tr><td>Binder Clips</td><td>For holding tubes vertically</td><td>4</td><td class="cost">$1</td></tr>
+      <tr><td>Small Plastic Bottles</td><td>For the drop test (simulated microgravity)</td><td>2</td><td class="cost">$1</td></tr>
+    </tbody>
+    <tfoot>
+      <tr><td colspan="3" style="text-align:right;font-weight:700;color:var(--text-bright);">Estimated Total</td><td class="cost" style="font-size:1rem;">~$15</td></tr>
+    </tfoot>
+  </table>
+
+  <h2 id="experiment1" class="reveal">Experiment 1: Capillary Rise</h2>
+  <p class="reveal">The fundamental experiment. Measure how high water climbs in tubes of different diameters and compare to the theoretical prediction.</p>
+
+  <div class="step-card reveal" data-step="01">
+    <h4>Prepare the Tubes</h4>
+    <p>Clean every glass tube with rubbing alcohol and let them dry completely. Any residual oils or dust will alter the contact angle and invalidate your results. Handle tubes by the ends — fingerprints deposit oils on the inner surface.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="02">
+    <h4>Set Up the Measurement Station</h4>
+    <p>Fill the glass dish with water colored with 2–3 drops of food coloring (makes the meniscus easier to see). Tape a mm ruler vertically next to where you'll place the tubes. Use binder clips to hold each tube upright, or build a simple cardboard stand with holes.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="03">
+    <h4>Measure Capillary Rise</h4>
+    <p>Lower each tube vertically into the water, just touching the surface. Wait 30 seconds for the water to reach equilibrium. Measure the height of the water inside the tube above the water level in the dish. Read from the bottom of the meniscus (the curved surface). Record to the nearest 0.5mm.</p>
+    <p>Repeat with each tube diameter: 0.5mm, 1mm, 1.5mm, 2mm.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="04">
+    <h4>Record and Compare</h4>
+    <p>Create a data table and compare your measurements to the theoretical predictions from the Jurin equation:</p>
+    <div class="code-block">EXPECTED vs. MEASURED (water on glass, θ ≈ 20°):
+
+Tube ID (mm)  Predicted h (mm)  Your Measured h (mm)
+──────────────────────────────────────────────────────
+  0.5              55.2          _______
+  1.0              27.6          _______
+  1.5              18.4          _______
+  2.0              13.8          _______
+
+Plot: h (y-axis) vs. 1/r (x-axis)
+Expected: a straight line through the origin.
+If your line is straight → you've experimentally confirmed the Jurin equation.</div>
+  </div>
+
+  <h2 id="experiment2" class="reveal">Experiment 2: Contact Angle</h2>
+  <p class="reveal">The contact angle (θ) determines how strongly a liquid wets a surface. You can change it by changing the liquid or the surface.</p>
+
+  <div class="step-card reveal" data-step="01">
+    <h4>Test Different Liquids</h4>
+    <p>Using the same 1mm tube, measure capillary rise for:</p>
+    <ul>
+      <li><strong>Pure water:</strong> θ ≈ 20° on glass</li>
+      <li><strong>Soapy water:</strong> Soap is a surfactant — it reduces surface tension from ~72 to ~25 mN/m. Predict: much lower rise.</li>
+      <li><strong>Rubbing alcohol (isopropyl):</strong> Surface tension ≈ 23 mN/m, but density is lower (~786 kg/m³) and contact angle is near 0°. Compare to prediction.</li>
+    </ul>
+  </div>
+
+  <div class="step-card reveal" data-step="02">
+    <h4>Observe the Meniscus Shape</h4>
+    <p>Take close-up photos (use your phone's macro mode or zoom) of the meniscus in each liquid. Water on glass forms a concave meniscus (curves up at the edges). Soapy water will have a flatter meniscus. If you can find a plastic tube, water on plastic has a different contact angle — the meniscus shape changes visibly.</p>
+  </div>
+
+  <div class="info-box reveal">
+    <div class="info-title">Why Contact Angle Matters in Space</div>
+    <p>Spacecraft designers carefully choose tank materials and surface coatings to control contact angle. A hydrophilic coating (low θ) makes fuel cling to walls and flow toward intakes via capillary action. A hydrophobic coating (high θ) prevents unwanted wetting. Getting this wrong can mean fuel starvation during a burn — which means a mission-ending failure.</p>
+  </div>
+
+  <h2 id="experiment3" class="reveal">Experiment 3: Simulated Microgravity</h2>
+  <p class="reveal">This is the one that connects your kitchen table to NASA's parabolic flight. You're going to create brief periods of microgravity and observe how capillary behavior changes.</p>
+
+  <div class="step-card reveal" data-step="01">
+    <h4>Build a Drop Capsule</h4>
+    <p>Take a small clear plastic bottle (a mini water bottle works). Fill it about 1/3 with colored water. Insert a capillary tube vertically into the water through a hole in the cap (seal with hot glue or clay). The tube should stick up above the water level inside the sealed bottle.</p>
+    <p>At rest (1g), the water rises to a certain height in the capillary tube — measure and record this.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="02">
+    <h4>Drop It</h4>
+    <p>Hold the bottle at chest height. Set your phone to slow-motion video (240fps if available) and aim it at the capillary tube. Drop the bottle. During the ~0.4 seconds of freefall (before it hits the ground), the water inside experiences near-zero gravity.</p>
+    <p>What you should observe: the water in the capillary tube rises significantly higher — potentially climbing all the way up the tube and overflowing at the top. This is because the 'g' term in the Jurin equation drops toward zero during freefall, so the equilibrium height shoots upward.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="03">
+    <h4>Improve the Setup</h4>
+    <p>Drop from higher: stand on a step stool or use a second-floor window (with a soft landing pad below — cushions, foam). More height = longer freefall = more time for capillary rise to reach a new equilibrium. From 2 meters, you get about 0.64 seconds of microgravity.</p>
+    <p>Alternatively, build a simple drop rig: suspend the bottle from a string, cut the string (or release a clip). Film with slow-motion. Review frame by frame to measure how the meniscus moves during the drop.</p>
+  </div>
+
+  <div class="code-block reveal">WHAT HAPPENS IN THE DROP:
+
+AT REST (1g):                    DURING FREE FALL (~0g):
+                                 
+   │     │                          │ ▓▓▓▓▓│ ← Water climbs 
+   │     │                          │ ▓▓▓▓▓│   much higher!
+   │     │                          │ ▓▓▓▓▓│
+   │ ▓▓▓▓│ ← Water at               │ ▓▓▓▓▓│
+   │ ▓▓▓▓│   Jurin height           │ ▓▓▓▓▓│
+───┴─────┴───                   ────┴──────┴────
+  ▓▓▓▓▓▓▓▓▓▓ ← Bulk water         ▓▓▓▓▓▓▓▓▓▓▓▓
+  ▓▓▓▓▓▓▓▓▓▓                      ▓▓▓▓▓▓▓▓▓▓▓▓
+
+h₁g = (2γcosθ)/(ρgr)          h₀g → ∞ (theoretically)
+                                In practice, limited by tube length
+                                and duration of freefall.
+
+This is EXACTLY what NASA studies on parabolic flights —
+just with more precise instruments and 25 seconds of
+microgravity instead of 0.4 seconds.</div>
+
+  <div class="tip-box reveal">
+    <div class="tip-title">Filming Tip</div>
+    <p>Use your phone's slow-motion mode. At 240fps, your 0.4-second drop becomes a 3.2-second slow-motion clip — enough to see the meniscus moving. Put a white piece of paper behind the bottle for contrast. Use food coloring to make the water clearly visible. Frame the shot tight on just the capillary tube.</p>
+  </div>
+
+  <h2 id="data" class="reveal">Data Collection & Analysis</h2>
+  <h3 class="reveal">Experiment 1 Data Table</h3>
+  <div class="code-block reveal">CAPILLARY RISE DATA:
+
+Trial  | Tube Ø (mm) | h measured (mm) | h predicted (mm) | % error
+───────┼─────────────┼─────────────────┼──────────────────┼────────
+  1    |    0.5      |                 |     55.2         |
+  2    |    1.0      |                 |     27.6         |
+  3    |    1.5      |                 |     18.4         |
+  4    |    2.0      |                 |     13.8         |
+
+For each measurement, take 3 readings and average them.
+Calculate % error: |measured − predicted| / predicted × 100</div>
+
+  <h3 class="reveal">Graphing</h3>
+  <p class="reveal">Create these graphs (by hand or in a spreadsheet):</p>
+  <ol class="reveal">
+    <li><strong>h vs. r (tube radius):</strong> Should show a 1/r curve (hyperbola).</li>
+    <li><strong>h vs. 1/r:</strong> Should be a straight line through the origin. The slope equals 2γcos(θ)/(ρg). From the slope, you can back-calculate the surface tension of your water — and check it against the known value.</li>
+    <li><strong>For Experiment 2:</strong> Bar chart comparing capillary rise for water, soapy water, and alcohol in the same tube.</li>
+    <li><strong>For Experiment 3:</strong> Side-by-side slow-motion frames showing meniscus position at 0ms, 100ms, 200ms, 300ms of freefall.</li>
+  </ol>
+
+  <h3 class="reveal">Calculating Surface Tension from Your Data</h3>
+  <div class="code-block reveal">From your h vs. 1/r graph:
+
+slope = 2γcos(θ) / (ρg)
+
+Rearrange:
+γ = slope × ρ × g / (2 × cos(θ))
+
+If your slope is 0.0000138 m² (13.8 mm·mm) and θ ≈ 20°:
+γ = 0.0000138 × 1000 × 9.81 / (2 × cos(20°))
+γ = 0.1354 / 1.879
+γ = 0.072 N/m = 72 mN/m
+
+(Published value for water at 25°C: 72.0 mN/m)
+If your answer is within 10% — your experiment is solid.</div>
+
+  <h2 id="zerog" class="reveal">The Zero-G Connection</h2>
+  <p class="reveal">In May 2026, Michael's experiment flies on a NASA parabolic flight — a modified aircraft that flies repeated parabolas, creating 20–25 second windows of near-zero gravity. During each parabola, the experiment measures capillary rise in tubes of different diameters and surface coatings. The question: does the Jurin equation accurately predict capillary behavior when g drops to 0.01g?</p>
+  <p class="reveal">Your ground experiment establishes the 1g baseline. The zero-g flight tests the same physics in a fundamentally different regime. If the Jurin equation holds in both environments, it validates the models that spacecraft designers use. If it doesn't — that's even more interesting, because it means there's physics we don't fully understand yet.</p>
+
+  <div class="info-box reveal">
+    <div class="info-title">Your Data Has Real Value</div>
+    <p>If you perform Experiment 1 rigorously — proper tube cleaning, multiple trials, careful measurement — your data is directly comparable to the zero-g flight data. That's not an exaggeration. The ground-based control is a critical part of any flight experiment. NASA always runs ground controls. You're doing the same thing, independently, in your kitchen.</p>
+  </div>
+
+  <h2 id="troubleshooting" class="reveal">Troubleshooting</h2>
+  <table class="parts-table reveal">
+    <thead>
+      <tr><th>Problem</th><th>Likely Cause</th><th>Fix</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Water doesn't climb at all</td><td>Tube too large; tube is dirty/oily</td><td>Use narrower tubes. Clean thoroughly with alcohol, rinse with distilled water, and air-dry.</td></tr>
+      <tr><td>Inconsistent heights between trials</td><td>Tube not perfectly vertical; air bubbles in tube</td><td>Use a level to ensure vertical alignment. If bubbles are trapped, gently tap the tube or withdraw and re-insert.</td></tr>
+      <tr><td>Measurements don't match theory</td><td>Contact angle differs from assumed 20°; temperature matters</td><td>Surface tension and contact angle vary with temperature and tube material. Record the room temperature. Note that θ is an approximation — it depends heavily on how clean the glass is.</td></tr>
+      <tr><td>Can't see the meniscus clearly</td><td>Poor lighting; not enough food coloring</td><td>Use more food coloring. Backlight the tubes (put a white paper behind them with a lamp behind the paper). Use phone zoom.</td></tr>
+      <tr><td>Drop test shows no visible change</td><td>Drop too short; tube already at max height</td><td>Use a shorter tube (so it hasn't already reached the top at 1g). Drop from higher to increase freefall time. Use slow-motion video — the effect may be too fast for the naked eye.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="extensions" class="reveal">Going Further</h2>
+
+  <h3 class="reveal">Temperature Dependence</h3>
+  <p class="reveal">Surface tension decreases as temperature increases. Repeat Experiment 1 with cold water (from the fridge, ~5°C), room temperature (~22°C), and warm water (~50°C). Plot capillary rise vs. temperature. You should see the rise decrease as temperature increases — because γ decreases.</p>
+
+  <h3 class="reveal">Non-Circular Channels</h3>
+  <p class="reveal">Capillary action doesn't just work in round tubes. Cut narrow channels in acrylic or wood and test whether capillary flow follows different rules. Square channels, V-grooves, and wedge shapes all create different flow patterns — and these are exactly the geometries used in spacecraft PMDs (propellant management devices).</p>
+
+  <h3 class="reveal">Build a Capillary Pump</h3>
+  <p class="reveal">Stack multiple capillary tubes side-by-side to create a "capillary pump" — a device that moves water from one reservoir to another using only surface tension. No electricity needed. This is the principle behind certain microgravity water management systems and paper-based microfluidics (used in medical diagnostics like pregnancy tests and COVID rapid tests).</p>
+
+  <h3 class="reveal">Submit to Launch Lab</h3>
+  <p class="reveal">Document your experiment with photos, data tables, and graphs. <a href="../index.html#submit" style="color:var(--accent)">Submit your build</a> to Launch Lab. When the zero-g flight data comes back, we'll compare your ground-based measurements to the actual microgravity results and publish the comparison. Your kitchen experiment — side by side with NASA flight data.</p>
+
+  <div class="info-box reveal">
+    <div class="info-title">Why This Project Matters Most</div>
+    <p>This is the project on the list that most directly connects to active NASA research. It costs $15. It uses glass tubes, water, and a ruler. And the data you collect is scientifically meaningful — not as a classroom exercise, but as an actual contribution to understanding fluid physics. The gap between "science fair project" and "real research" is smaller than anyone tells you. Sometimes it's just a glass tube and a question.</p>
+  </div>
+
+</div>
+
+<footer>
+  <p class="footer-main">Launch Lab &middot; Founded by Michael Grimalovsky &middot; Colonia, NJ &middot; 2026</p>
+  <p class="footer-tagline">Talent is equally distributed. Opportunity is not.</p>
+</footer>
+
+</div>
+
+<button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">&uarr;</button>
+
+<script>
+(function(){const c=document.getElementById('starfield'),x=c.getContext('2d');let s=[];function r(){c.width=innerWidth;c.height=innerHeight}function i(){s=[];for(let j=0;j<150;j++)s.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.2+0.3,a:Math.random()*0.5+0.2,sp:Math.random()*0.02+0.005,o:Math.random()*Math.PI*2,b:Math.random()>0.6})}function d(t){x.clearRect(0,0,c.width,c.height);for(const p of s){let a=p.a+Math.sin(t*p.sp+p.o)*0.3;a=Math.max(0,Math.min(1,a));x.fillStyle=p.b?`hsla(210,80%,80%,${a})`:`rgba(255,255,255,${a})`;x.beginPath();x.arc(p.x,p.y,p.r,0,Math.PI*2);x.fill()}requestAnimationFrame(d)}addEventListener('resize',()=>{r();i()});r();i();requestAnimationFrame(d)})();
+(function(){const o=new IntersectionObserver(e=>{e.forEach(el=>{if(el.isIntersecting)el.target.classList.add('visible')})},{threshold:0.1});document.querySelectorAll('.reveal').forEach(el=>o.observe(el))})();
+(function(){const b=document.getElementById('back-to-top');addEventListener('scroll',()=>{b.classList.toggle('show',scrollY>400)})})();
+</script>
+</body>
+</html>

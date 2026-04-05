@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>P-003: Bioinspired Robotic Arm — Launch Lab</title>
+<meta name="description" content="3D-print a cable-driven tentacle arm inspired by cephalopod biology. Full build guide with CAD files, assembly instructions, and servo control code.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #020810; --bg-card: #0a1628; --accent: #00b4ff;
+  --accent-glow: rgba(0,180,255,0.3); --text: #c8d6e5;
+  --text-bright: #edf2f7; --text-muted: #5a6a7a;
+  --border: #122040; --green: #00ff88; --yellow: #ffc107; --red: #ff4444;
+  --font-mono: 'Space Mono', monospace; --font-heading: 'Syne', sans-serif;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--font-mono); font-size: 15px; line-height: 1.7; overflow-x: hidden; }
+canvas#starfield { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+.blueprint-grid { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; background-image: linear-gradient(rgba(0,180,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,180,255,0.03) 1px, transparent 1px); background-size: 60px 60px; }
+.content-wrapper { position: relative; z-index: 2; }
+nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(2,8,16,0.85); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); padding: 0 2rem; height: 64px; display: flex; align-items: center; justify-content: space-between; }
+.nav-logo { font-family: var(--font-heading); font-weight: 800; font-size: 1.25rem; color: var(--text-bright); letter-spacing: 2px; text-decoration: none; }
+.nav-logo span { display: block; font-family: var(--font-mono); font-size: 0.6rem; font-weight: 400; color: var(--text-muted); letter-spacing: 1px; }
+.nav-back { color: var(--accent); text-decoration: none; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; transition: color 0.3s; }
+.nav-back:hover { color: #33c4ff; }
+.guide-header { padding: 120px 2rem 60px; max-width: 900px; margin: 0 auto; }
+.guide-tag { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 3px; color: var(--accent); margin-bottom: 0.5rem; }
+.guide-title { font-family: var(--font-heading); font-size: clamp(2rem,4vw,3rem); font-weight: 800; color: var(--text-bright); line-height: 1.1; margin-bottom: 1rem; }
+.guide-subtitle { font-size: 1rem; color: var(--text); max-width: 640px; margin-bottom: 2rem; }
+.guide-meta { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 2rem; }
+.meta-item { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; padding: 6px 16px; border: 1px solid var(--border); color: var(--text-muted); }
+.meta-item strong { color: var(--text-bright); }
+.badge-advanced { background: rgba(255,100,50,0.1); color: #ff6432; border-color: rgba(255,100,50,0.2); }
+.guide-body { max-width: 900px; margin: 0 auto; padding: 0 2rem 100px; }
+.guide-body h2 { font-family: var(--font-heading); font-size: 1.6rem; font-weight: 700; color: var(--text-bright); margin: 3rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+.guide-body h3 { font-family: var(--font-heading); font-size: 1.15rem; font-weight: 600; color: var(--accent); margin: 2rem 0 0.75rem; }
+.guide-body p { margin-bottom: 1rem; }
+.guide-body ul, .guide-body ol { margin: 1rem 0 1.5rem 1.5rem; }
+.guide-body li { margin-bottom: 0.5rem; }
+.warning-box { background: rgba(255,68,68,0.08); border: 1px solid rgba(255,68,68,0.3); border-left: 4px solid var(--red); padding: 1.25rem 1.5rem; margin: 1.5rem 0; font-size: 0.9rem; }
+.warning-box .warning-title { color: var(--red); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+.info-box { background: rgba(0,180,255,0.06); border: 1px solid rgba(0,180,255,0.2); border-left: 4px solid var(--accent); padding: 1.25rem 1.5rem; margin: 1.5rem 0; font-size: 0.9rem; }
+.info-box .info-title { color: var(--accent); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+.tip-box { background: rgba(0,255,136,0.06); border: 1px solid rgba(0,255,136,0.2); border-left: 4px solid var(--green); padding: 1.25rem 1.5rem; margin: 1.5rem 0; font-size: 0.9rem; }
+.tip-box .tip-title { color: var(--green); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+.parts-table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.85rem; }
+.parts-table th { text-align: left; padding: 10px 12px; background: var(--bg-card); color: var(--accent); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid var(--border); }
+.parts-table td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); color: var(--text); }
+.parts-table tr:hover td { background: rgba(0,180,255,0.03); }
+.parts-table .cost { color: var(--green); font-weight: 700; }
+.code-block { background: var(--bg-card); border: 1px solid var(--border); padding: 1.5rem; margin: 1.5rem 0; overflow-x: auto; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6; color: var(--text-muted); white-space: pre; }
+.step-card { background: var(--bg-card); border: 1px solid var(--border); padding: 1.5rem 1.5rem 1.5rem 4.5rem; margin: 1rem 0; position: relative; }
+.step-card::before { content: attr(data-step); position: absolute; left: 1.25rem; top: 1.5rem; font-family: var(--font-heading); font-size: 1.2rem; font-weight: 800; color: var(--accent); }
+.step-card h4 { font-family: var(--font-heading); font-size: 1rem; font-weight: 700; color: var(--text-bright); margin-bottom: 0.5rem; }
+.step-card p { margin-bottom: 0.5rem; font-size: 0.9rem; }
+.toc { background: var(--bg-card); border: 1px solid var(--border); padding: 1.5rem 2rem; margin-bottom: 2rem; }
+.toc h3 { font-family: var(--font-heading); font-size: 0.9rem; color: var(--text-bright); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 2px; }
+.toc ol { margin: 0 0 0 1.25rem; }
+.toc li { margin-bottom: 0.3rem; }
+.toc a { color: var(--accent); text-decoration: none; font-size: 0.85rem; transition: color 0.3s; }
+.toc a:hover { color: #33c4ff; }
+footer { border-top: 1px solid var(--border); padding: 3rem 2rem; text-align: center; }
+.footer-main { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; }
+.footer-tagline { font-family: var(--font-heading); font-size: 1rem; font-weight: 600; color: var(--text-bright); }
+.reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+#back-to-top { position: fixed; bottom: 2rem; right: 2rem; z-index: 99; width: 48px; height: 48px; background: var(--accent); color: var(--bg); border: none; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%); opacity: 0; pointer-events: none; transition: opacity 0.3s, background 0.3s; }
+#back-to-top.show { opacity: 1; pointer-events: all; }
+#back-to-top:hover { background: #33c4ff; }
+@media (max-width: 768px) { nav { padding: 0 1rem; } .guide-header { padding: 100px 1rem 40px; } .guide-body { padding: 0 1rem 60px; } .step-card { padding-left: 3.5rem; } .step-card::before { left: 0.75rem; } }
+</style>
+</head>
+<body>
+<canvas id="starfield"></canvas>
+<div class="blueprint-grid"></div>
+<div class="content-wrapper">
+
+<nav>
+  <a href="../index.html" class="nav-logo">LAUNCH LAB <span>Free Engineering for Everyone</span></a>
+  <a href="../index.html#projects" class="nav-back">&larr; All Projects</a>
+</nav>
+
+<div class="guide-header">
+  <div class="guide-tag reveal">P-003 &middot; Project Guide</div>
+  <h1 class="guide-title reveal">Bioinspired Robotic Arm</h1>
+  <p class="guide-subtitle reveal">3D-print a cable-driven tentacle arm inspired by cephalopod biology. The one we built lifted 260x its own weight. Yours will too.</p>
+  <div class="guide-meta reveal">
+    <span class="meta-item badge-advanced">Advanced</span>
+    <span class="meta-item"><strong>~$40</strong> total cost</span>
+    <span class="meta-item"><strong>10–15 hrs</strong> build time</span>
+    <span class="meta-item"><strong>Ages 15+</strong></span>
+  </div>
+</div>
+
+<div class="guide-body">
+
+  <div class="toc reveal">
+    <h3>Table of Contents</h3>
+    <ol>
+      <li><a href="#overview">Overview & Biology</a></li>
+      <li><a href="#parts">Parts & Tools</a></li>
+      <li><a href="#design">Design Principles</a></li>
+      <li><a href="#cad">CAD Modeling</a></li>
+      <li><a href="#printing">3D Printing</a></li>
+      <li><a href="#assembly">Assembly</a></li>
+      <li><a href="#control">Servo Control Code</a></li>
+      <li><a href="#testing">Testing & Measurement</a></li>
+      <li><a href="#troubleshooting">Troubleshooting</a></li>
+      <li><a href="#extensions">Going Further</a></li>
+    </ol>
+  </div>
+
+  <h2 id="overview" class="reveal">Overview & Biology</h2>
+  <p class="reveal">Octopuses have no skeleton. Zero rigid bones. Yet they can open jars, manipulate tools, and exert extraordinary grip force — all using a structure called a muscular hydrostat. Their arms contain longitudinal muscles (for shortening), transverse muscles (for elongation), and oblique muscles (for twisting). By contracting different muscle groups, they produce complex 3D motion from a boneless limb.</p>
+  <p class="reveal">Your robotic arm mimics this using a different mechanism: cable-driven articulation. Instead of muscles, you use tendons (fishing line or Kevlar thread) routed through a chain of 3D-printed vertebrae-like segments. When a servo motor pulls a tendon, the arm curls. Multiple tendons at different positions around the arm allow curling in different directions — just like an octopus choosing which muscle group to contract.</p>
+
+  <div class="info-box reveal">
+    <div class="info-title">Why Soft Robotics Matters</div>
+    <p>Traditional rigid robots are great in factories but terrible in unstructured environments — homes, disaster sites, the human body. Soft robots conform to irregular shapes, handle delicate objects without crushing them, and survive impacts that would shatter rigid arms. NASA is researching soft grippers for satellite servicing. Surgical companies are developing tentacle-like endoscopes. This is a rapidly growing field — and you're building its fundamental mechanism.</p>
+  </div>
+
+  <h2 id="parts" class="reveal">Parts & Tools</h2>
+  <table class="parts-table reveal">
+    <thead>
+      <tr><th>Component</th><th>Specification</th><th>Qty</th><th>Cost</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>PLA Filament</td><td>1.75mm, any color (you'll use ~100g)</td><td>1 roll</td><td class="cost">$8</td></tr>
+      <tr><td>MG996R Servo Motors</td><td>High-torque, metal gear, standard size</td><td>3</td><td class="cost">$12</td></tr>
+      <tr><td>Arduino Uno / Nano</td><td>For servo control</td><td>1</td><td class="cost">$5</td></tr>
+      <tr><td>Braided Fishing Line</td><td>50lb test, low stretch (PE braided)</td><td>1 spool</td><td class="cost">$5</td></tr>
+      <tr><td>Servo Horn Screws</td><td>M2 or M3 × 8mm (usually included with servos)</td><td>6</td><td class="cost">$0</td></tr>
+      <tr><td>Small Cable Ties</td><td>100mm zip ties</td><td>20</td><td class="cost">$2</td></tr>
+      <tr><td>5V Power Supply</td><td>5V 3A (servos draw heavy current)</td><td>1</td><td class="cost">$5</td></tr>
+      <tr><td>Breadboard + Jumper Wires</td><td>For prototyping</td><td>1 set</td><td class="cost">$3</td></tr>
+    </tbody>
+    <tfoot>
+      <tr><td colspan="3" style="text-align:right;font-weight:700;color:var(--text-bright);">Estimated Total</td><td class="cost" style="font-size:1rem;">~$40</td></tr>
+    </tfoot>
+  </table>
+
+  <h3 class="reveal">Tools Required</h3>
+  <ul class="reveal">
+    <li>3D printer (any FDM printer — Ender 3, Prusa Mini, school/library printer)</li>
+    <li>Small needle-nose pliers</li>
+    <li>Lighter (for melting line ends to prevent fraying)</li>
+    <li>Super glue (CA glue)</li>
+    <li>Small drill or pin vise (for cleaning holes)</li>
+    <li>Ruler / calipers</li>
+  </ul>
+
+  <div class="tip-box reveal">
+    <div class="tip-title">No 3D Printer?</div>
+    <p>Check your school, local library (many have free maker spaces), or search for a maker space near you. Services like Treatstock or PCBWay also print and ship parts for a few dollars. You can also cut vertebrae from cardboard or laser-cut acrylic as an alternative.</p>
+  </div>
+
+  <h2 id="design" class="reveal">Design Principles</h2>
+  <h3 class="reveal">The Vertebrae Chain</h3>
+  <p class="reveal">The arm consists of 10–15 identical disc-shaped segments (vertebrae) stacked and connected by a central flexible spine. Each vertebra has 3 or 4 holes near its perimeter where tendons pass through. The spacing between vertebrae determines the arm's flexibility — closer spacing means smoother, more compliant bending; wider spacing means larger range of motion per segment.</p>
+
+  <div class="code-block reveal">SINGLE VERTEBRA (top view):
+
+         ┌───────────────┐
+        ╱   ○         ○   ╲     ← Tendon holes (3-4 evenly spaced)
+       │                     │
+       │      ┌─────┐       │   ← Center bore for spine
+       │      │  ●  │       │     (elastic cord passes through)
+       │      └─────┘       │
+        ╲   ○               ╱
+         └───────────────┘
+
+   Diameter: 35mm
+   Thickness: 8mm
+   Center bore: 6mm
+   Tendon holes: 2mm diameter, at radius 12mm
+
+SIDE VIEW (3 vertebrae stacked):
+
+   ╔═══════════╗  ← Top vertebra
+   ║ ○  ●  ○   ║
+   ╚═══════════╝
+       │  │         ← 6mm gap (flexible zone)
+   ╔═══════════╗
+   ║ ○  ●  ○   ║
+   ╚═══════════╝
+       │  │
+   ╔═══════════╗
+   ║ ○  ●  ○   ║  ← Base vertebra (mounts to frame)
+   ╚═══════════╝
+
+   ● = elastic spine cord (always under tension)
+   ○ = tendon lines (pulled by servos)</div>
+
+  <h3 class="reveal">How Cable-Driving Works</h3>
+  <p class="reveal">Imagine the arm standing vertically. Three tendons run from the base, through every vertebra's perimeter holes, to the tip. When you pull Tendon A (at the "front"), the front side of every gap closes — the arm bends forward. Pull Tendon B (at 120° from A), it bends that direction. Pull two tendons simultaneously, and the arm bends in a compound direction. Release all tendons, and the elastic spine snaps everything back to neutral.</p>
+
+  <h2 id="cad" class="reveal">CAD Modeling</h2>
+  <p class="reveal">We'll design the parts in Fusion 360 (free for students). If you've never used Fusion, complete <a href="p004-intro-to-cad.html" style="color:var(--accent)">P-004: Intro to CAD</a> first.</p>
+
+  <div class="step-card reveal" data-step="01">
+    <h4>Design the Vertebra</h4>
+    <p>Create a new sketch on the XY plane. Draw a circle: diameter 35mm. Add a center circle: diameter 6mm (spine bore). Add 3 circles at 120° intervals on a 24mm diameter bolt circle: each 2mm diameter (tendon channels). Extrude the profile 8mm. Add 0.5mm chamfers on all edges — this helps 3D printing quality and prevents the vertebrae from catching on each other.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="02">
+    <h4>Design the Base Plate</h4>
+    <p>The base plate is a larger disc (60mm diameter, 10mm thick) with mounting holes for the servo brackets. It has the same center bore and tendon holes as the vertebrae, plus four M3 mounting holes in a square pattern for bolting to a surface. Include channels/grooves on the bottom face to route the tendons to the servos cleanly.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="03">
+    <h4>Design the Tip Cap</h4>
+    <p>The tip cap is a dome-shaped end piece where all tendons terminate. It has a center hole for anchoring the elastic spine and three small anchor holes where you'll knot and glue each tendon. Make it 35mm diameter, 12mm tall with a hemispheric top surface — this lets the arm grip rounded objects better.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="04">
+    <h4>Design the Servo Mount Bracket</h4>
+    <p>Design an L-bracket that holds an MG996R servo with its horn pointing upward. The horn is where you'll attach each tendon. Include holes matching the servo's mounting pattern (use calipers to measure your servos). You need 3 of these, arranged around the base plate at 120° intervals.</p>
+  </div>
+
+  <h2 id="printing" class="reveal">3D Printing</h2>
+  <h3 class="reveal">Print Settings</h3>
+  <table class="parts-table reveal">
+    <thead>
+      <tr><th>Setting</th><th>Value</th><th>Why</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Layer Height</td><td>0.2mm</td><td>Good balance of speed and surface quality</td></tr>
+      <tr><td>Infill</td><td>40%</td><td>Vertebrae need strength; too low and they crack under load</td></tr>
+      <tr><td>Infill Pattern</td><td>Gyroid or Grid</td><td>Gyroid gives omnidirectional strength</td></tr>
+      <tr><td>Walls</td><td>3 perimeters</td><td>Tendon holes need solid surrounding material</td></tr>
+      <tr><td>Top/Bottom Layers</td><td>4 each</td><td>Prevents tendon from punching through</td></tr>
+      <tr><td>Material</td><td>PLA</td><td>Easy to print, stiff enough for structure. PETG works too for more flexibility.</td></tr>
+      <tr><td>Supports</td><td>None needed</td><td>All parts designed for printability — no overhangs over 45°</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="reveal">Print Checklist</h3>
+  <ul class="reveal">
+    <li>12 vertebrae (print all in one batch if your bed fits them)</li>
+    <li>1 base plate</li>
+    <li>1 tip cap</li>
+    <li>3 servo mount brackets</li>
+  </ul>
+
+  <p class="reveal">Total print time: approximately 6–8 hours depending on your printer speed. Total filament: roughly 80–100g.</p>
+
+  <div class="tip-box reveal">
+    <div class="tip-title">Post-Print Cleanup</div>
+    <p>After printing, run a 2mm drill bit through every tendon hole and a 6mm bit through every center bore. Layer lines and slight warping can tighten these holes. The tendons and spine cord must pass through freely with zero friction — any binding kills your arm's performance.</p>
+  </div>
+
+  <h2 id="assembly" class="reveal">Assembly</h2>
+
+  <div class="step-card reveal" data-step="01">
+    <h4>Thread the Elastic Spine</h4>
+    <p>Cut a piece of 4mm elastic bungee cord about 15cm longer than your total arm length. Thread it through the center bore of all 12 vertebrae, then through the base plate and tip cap. Knot both ends firmly and add a dab of super glue to each knot. The spine should hold the vertebrae together under light tension — when you compress them and release, they should spring back to even spacing.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="02">
+    <h4>Thread the Tendons</h4>
+    <p>Cut three lengths of braided fishing line, each about 50cm (you'll trim later). Thread each one through its corresponding tendon hole in the base plate, up through all 12 vertebrae, and tie it off at the tip cap's anchor hole. Use a surgeon's knot (double overhand) and seal with super glue. The tendon should slide freely through every vertebra when you pull from the base.</p>
+    <p>Label your tendons: A, B, C (mark with different colored tape at the base end).</p>
+  </div>
+
+  <div class="step-card reveal" data-step="03">
+    <h4>Mount the Servos</h4>
+    <p>Screw each servo into its bracket using the servo's included mounting hardware. Bolt the three brackets to the base plate, evenly spaced at 120°. Each servo horn should face inward toward the base plate's tendon exit holes.</p>
+  </div>
+
+  <div class="step-card reveal" data-step="04">
+    <h4>Attach Tendons to Servo Horns</h4>
+    <p>Route each tendon from the base plate to its corresponding servo horn. Thread the line through a hole near the horn's tip and tie it off with enough tension that the arm is just barely neutral (straight) when the servo is at its center position (90°). The horn radius determines your mechanical advantage — a hole farther from center gives more arm travel per servo degree but less pulling force.</p>
+  </div>
+
+  <div class="code-block reveal">COMPLETE ASSEMBLY (side view):
+
+    ╭─────╮  ← Tip cap (tendon anchors here)
+    │  ●  │
+    ╰──┬──╯
+   ╔═══╪═══╗ ← Vertebra 12
+   ╚═══╪═══╝
+       │
+   ╔═══╪═══╗ ← Vertebra 11
+   ╚═══╪═══╝
+       │       ... (10 more vertebrae) ...
+       │
+   ╔═══╪═══╗ ← Vertebra 1
+   ╚═══╪═══╝
+   ╔═══╪═══╗ ← Base plate
+   ╚═══╪═══╝
+    ┌───┼───┐
+    │ ┌─┴─┐ │
+    │ │SRV│ │  ← Servo (one of three)
+    │ └───┘ │     Tendon wraps around servo horn
+    └───────┘
+
+   ● = elastic spine (center)
+   │ = tendon lines (pulled by servos)
+   3 servos × 3 tendons = full 360° directional control</div>
+
+  <h2 id="control" class="reveal">Servo Control Code</h2>
+  <p class="reveal">Upload this to your Arduino. It lets you control each servo independently via serial commands, or run preset motion patterns.</p>
+
+  <div class="code-block reveal">// Launch Lab — Tentacle Arm Controller v1.0
+#include &lt;Servo.h&gt;
+
+Servo servoA, servoB, servoC;
+const int PIN_A = 9, PIN_B = 10, PIN_C = 11;
+const int NEUTRAL = 90;
+
+void setup() {
+  Serial.begin(9600);
+  servoA.attach(PIN_A);
+  servoB.attach(PIN_B);
+  servoC.attach(PIN_C);
+  center();
+  Serial.println("Tentacle Arm Ready.");
+  Serial.println("Commands: A[angle] B[angle] C[angle]");
+  Serial.println("  e.g. 'A45' moves servo A to 45 deg");
+  Serial.println("  'W' = wave pattern");
+  Serial.println("  'G' = grip (all servos pull)");
+  Serial.println("  'R' = release (center all)");
+}
+
+void loop() {
+  if (Serial.available() > 0) {
+    char cmd = Serial.read();
+
+    if (cmd == 'A' || cmd == 'B' || cmd == 'C') {
+      int angle = Serial.parseInt();
+      angle = constrain(angle, 0, 180);
+      if (cmd == 'A') servoA.write(angle);
+      if (cmd == 'B') servoB.write(angle);
+      if (cmd == 'C') servoC.write(angle);
+      Serial.print(cmd); Serial.print(" → ");
+      Serial.println(angle);
+    }
+    else if (cmd == 'W') wave();
+    else if (cmd == 'G') grip();
+    else if (cmd == 'R') center();
+  }
+}
+
+void center() {
+  servoA.write(NEUTRAL);
+  servoB.write(NEUTRAL);
+  servoC.write(NEUTRAL);
+  Serial.println("Centered.");
+}
+
+void grip() {
+  for (int a = NEUTRAL; a >= 30; a -= 2) {
+    servoA.write(a);
+    servoB.write(a);
+    servoC.write(a);
+    delay(20);
+  }
+  Serial.println("Gripping.");
+}
+
+void wave() {
+  Serial.println("Waving...");
+  for (int cycle = 0; cycle < 3; cycle++) {
+    for (int i = 0; i <= 60; i += 2) {
+      float rad = i * 0.1;
+      servoA.write(NEUTRAL + 40 * sin(rad));
+      servoB.write(NEUTRAL + 40 * sin(rad + 2.09));
+      servoC.write(NEUTRAL + 40 * sin(rad + 4.19));
+      delay(30);
+    }
+  }
+  center();
+}</div>
+
+  <div class="warning-box reveal">
+    <div class="warning-title">Power Warning</div>
+    <p>Do NOT power servos from the Arduino's 5V pin — three MG996R servos can draw over 3A under load, which will brown out or damage the Arduino. Use a separate 5V 3A power supply. Connect the supply's GND to the Arduino's GND (common ground). Only the signal wires go to Arduino pins.</p>
+  </div>
+
+  <h2 id="testing" class="reveal">Testing & Measurement</h2>
+  <h3 class="reveal">Range of Motion Test</h3>
+  <p class="reveal">Send individual servo commands (A30, A150, etc.) and observe the arm's deflection. Measure the tip displacement with a ruler. Record the angle-to-displacement relationship for each tendon. If the arm curls unevenly, check that all tendons have equal initial tension.</p>
+
+  <h3 class="reveal">Lift Capacity Test</h3>
+  <p class="reveal">This is the big one. Weigh the arm assembly on a kitchen scale (it should be roughly 80–120g). Then test its grip capacity:</p>
+  <ol class="reveal">
+    <li>Curl the arm around a vertical rod using the grip command.</li>
+    <li>Hang progressively heavier weights from a hook attached to the arm's tip.</li>
+    <li>Record the maximum weight before the arm slips or the servos stall.</li>
+    <li>Calculate the strength-to-weight ratio: lifted weight / arm weight.</li>
+  </ol>
+  <p class="reveal">Our version lifted 260x its own weight. The key factors: low-stretch braided line (PE braid stretches less than 1%), high-torque servos, and tight vertebra tolerances so the arm wraps snugly around objects.</p>
+
+  <h2 id="troubleshooting" class="reveal">Troubleshooting</h2>
+  <table class="parts-table reveal">
+    <thead>
+      <tr><th>Problem</th><th>Likely Cause</th><th>Fix</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Arm doesn't return to straight</td><td>Elastic spine too loose</td><td>Replace with tighter bungee cord or shorten it (re-knot). The spine should hold light tension in neutral.</td></tr>
+      <tr><td>Uneven curling</td><td>Unequal tendon tensions</td><td>With all servos at 90°, adjust each tendon so the arm is perfectly straight. Mark and re-tie as needed.</td></tr>
+      <tr><td>Servo buzzing / vibrating</td><td>Servo fighting against excessive tension</td><td>Reduce initial tendon tension. Check that the servo isn't being commanded past its physical range.</td></tr>
+      <tr><td>Tendon snaps</td><td>Too much load; knot failure</td><td>Use 80lb+ braided line. Always secure knots with super glue. Check for sharp edges on vertebra holes that could cut the line.</td></tr>
+      <tr><td>Arduino resets during movement</td><td>Servo current draw browns out USB power</td><td>Use separate 5V supply for servos. Connect grounds together.</td></tr>
+      <tr><td>Poor grip on objects</td><td>Not enough vertebrae, or gaps too large</td><td>Add more vertebrae (try 15-18 for longer arm). Reduce gap spacing for smoother conformity around objects.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="extensions" class="reveal">Going Further</h2>
+
+  <h3 class="reveal">Add a Gripper Tip</h3>
+  <p class="reveal">Design a 3-finger soft gripper that attaches to the tip cap. Use flexible TPU filament for the fingers. Now you have a full tentacle manipulator that can curl AND grasp.</p>
+
+  <h3 class="reveal">Pressure Sensing</h3>
+  <p class="reveal">Embed thin force-sensitive resistors (FSRs, ~$3 each) in the tip cap to measure grip force. Feed the data back to Arduino and implement closed-loop grip control — the arm squeezes until it hits a target force, then holds. This is how surgical robots prevent tissue damage.</p>
+
+  <h3 class="reveal">Joystick Control</h3>
+  <p class="reveal">Add a 2-axis joystick module (~$2). Map the X/Y axes to servo A/B commands, and a button to toggle grip. Now you have real-time manual control that feels like piloting a robot.</p>
+
+  <h3 class="reveal">Document & Compete</h3>
+  <p class="reveal">A bioinspired robot arm with quantified performance data (strength-to-weight ratio, range of motion, grip force) is a strong science fair project. Film the arm lifting objects, curling around pipes, picking up irregularly-shaped items. The visual impact alone will set your project apart.</p>
+
+  <div class="info-box reveal">
+    <div class="info-title">What You Just Built</div>
+    <p>Cable-driven continuum robots are used in minimally invasive surgery (they can navigate inside your body), deep-sea exploration (they grip fragile coral samples), nuclear decommissioning (they reach into contaminated spaces), and space robotics (they conform to irregular satellite surfaces). You built the same kinematic concept for $40. The research papers cost more than your parts list.</p>
+  </div>
+
+</div>
+
+<footer>
+  <p class="footer-main">Launch Lab &middot; Founded by Michael Grimalovsky &middot; Colonia, NJ &middot; 2026</p>
+  <p class="footer-tagline">Talent is equally distributed. Opportunity is not.</p>
+</footer>
+
+</div>
+
+<button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">&uarr;</button>
+
+<script>
+(function(){const c=document.getElementById('starfield'),x=c.getContext('2d');let s=[];function r(){c.width=innerWidth;c.height=innerHeight}function i(){s=[];for(let j=0;j<150;j++)s.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.2+0.3,a:Math.random()*0.5+0.2,sp:Math.random()*0.02+0.005,o:Math.random()*Math.PI*2,b:Math.random()>0.6})}function d(t){x.clearRect(0,0,c.width,c.height);for(const p of s){let a=p.a+Math.sin(t*p.sp+p.o)*0.3;a=Math.max(0,Math.min(1,a));x.fillStyle=p.b?`hsla(210,80%,80%,${a})`:`rgba(255,255,255,${a})`;x.beginPath();x.arc(p.x,p.y,p.r,0,Math.PI*2);x.fill()}requestAnimationFrame(d)}addEventListener('resize',()=>{r();i()});r();i();requestAnimationFrame(d)})();
+(function(){const o=new IntersectionObserver(e=>{e.forEach(el=>{if(el.isIntersecting)el.target.classList.add('visible')})},{threshold:0.1});document.querySelectorAll('.reveal').forEach(el=>o.observe(el))})();
+(function(){const b=document.getElementById('back-to-top');addEventListener('scroll',()=>{b.classList.toggle('show',scrollY>400)})})();
+</script>
+</body>
+</html>
